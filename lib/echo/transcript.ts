@@ -81,6 +81,9 @@ export function toDisplayTurns(transcript: Transcript): DisplayTurn[] {
             .map((block) => (block as Anthropic.TextBlockParam).text)
             .join("");
     if (text.length === 0) return;
+    // MessageParam.role also admits "system" in this SDK. We never write one,
+    // and if one ever appeared it is not the user's conversation, so skip it.
+    if (message.role !== "user" && message.role !== "assistant") return;
     turns.push({ id: `turn-${index}`, role: message.role, text });
   });
   return turns;
