@@ -1,0 +1,20 @@
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# Secrets. SESSION_MASTER_KEY, the service role key and the Anthropic key live
+# here. Nothing in this family is ever committed.
+.env
+.env.local
+.env.*.local
+
+.vercel/
+.DS_Store
+npm-debug.log*
+coverage/
+
+# Local Claude Code settings, not shared
+.claude/settings.local.json
