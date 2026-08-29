@@ -4,6 +4,10 @@
  * Neutral placeholder styling. Brand comes later — nothing here should be
  * mistaken for a design decision. Warm greys rather than pure black and white,
  * because a reflective conversation reads better on paper than on a screen.
+ *
+ * @theme declares the tokens and generates the utilities (bg-page, text-ink,
+ * border-line, …). Dark mode then redefines the same custom properties on
+ * :root, which every generated utility already reads through var().
  */
 @theme {
   --color-page: oklch(0.985 0.003 90);
@@ -14,7 +18,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  @theme {
+  :root {
     --color-page: oklch(0.19 0.006 80);
     --color-ink: oklch(0.93 0.004 85);
     --color-ink-soft: oklch(0.68 0.006 82);

@@ -13,7 +13,7 @@ export const TRANSCRIPT_VERSION = 1;
 
 export interface Transcript {
   readonly v: number;
-  readonly messages: Anthropic.MessageParam[];
+  readonly messages: Anthropic.Beta.BetaMessageParam[];
 }
 
 export function emptyTranscript(): Transcript {
@@ -49,12 +49,12 @@ export function deserialiseTranscript(plaintext: string): Transcript {
   if (!Array.isArray(candidate.messages)) {
     throw new TranscriptFormatError("Session payload has no message array.");
   }
-  return { v: TRANSCRIPT_VERSION, messages: candidate.messages as Anthropic.MessageParam[] };
+  return { v: TRANSCRIPT_VERSION, messages: candidate.messages as Anthropic.Beta.BetaMessageParam[] };
 }
 
 export function withMessages(
   transcript: Transcript,
-  ...added: Anthropic.MessageParam[]
+  ...added: Anthropic.Beta.BetaMessageParam[]
 ): Transcript {
   return { v: TRANSCRIPT_VERSION, messages: [...transcript.messages, ...added] };
 }
@@ -78,7 +78,7 @@ export function toDisplayTurns(transcript: Transcript): DisplayTurn[] {
         ? message.content
         : message.content
             .filter((block) => block.type === "text")
-            .map((block) => (block as Anthropic.TextBlockParam).text)
+            .map((block) => (block as Anthropic.Beta.BetaTextBlockParam).text)
             .join("");
     if (text.length === 0) return;
     // MessageParam.role also admits "system" in this SDK. We never write one,

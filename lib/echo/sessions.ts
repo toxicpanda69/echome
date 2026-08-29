@@ -110,7 +110,7 @@ export async function appendMessages(
   store: SessionStore,
   row: SessionRow,
   transcript: Transcript,
-  ...messages: Anthropic.MessageParam[]
+  ...messages: Anthropic.Beta.BetaMessageParam[]
 ): Promise<Transcript> {
   const next = withMessages(transcript, ...messages);
   await saveTranscript(store, row, next);

@@ -23,8 +23,8 @@ interface AuthFormProps {
 }
 
 const INPUT =
-  "w-full rounded-lg border border-[--color-line] bg-[--color-raised] px-3 py-2.5 text-base " +
-  "outline-none transition focus:border-[--color-ink-soft] focus:ring-2 focus:ring-[--color-line]";
+  "w-full rounded-lg border border-line bg-raised px-3 py-2.5 text-base " +
+  "outline-none transition focus:border-ink-soft focus:ring-2 focus:ring-line";
 
 export function AuthForm({
   title,
@@ -42,7 +42,7 @@ export function AuthForm({
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-5 py-12">
       <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
-      {subtitle ? <p className="mt-2 text-sm text-[--color-ink-soft]">{subtitle}</p> : null}
+      {subtitle ? <p className="mt-2 text-sm text-ink-soft">{subtitle}</p> : null}
 
       <form action={formAction} className="mt-8 flex flex-col gap-4">
         {hidden
@@ -53,7 +53,7 @@ export function AuthForm({
 
         {fields.includes("email") ? (
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-[--color-ink-soft]">Email</span>
+            <span className="text-sm text-ink-soft">Email</span>
             <input
               className={INPUT}
               type="email"
@@ -68,7 +68,7 @@ export function AuthForm({
 
         {fields.includes("password") ? (
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-[--color-ink-soft]">{passwordLabel}</span>
+            <span className="text-sm text-ink-soft">{passwordLabel}</span>
             <input
               className={INPUT}
               type="password"
@@ -89,25 +89,25 @@ export function AuthForm({
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 rounded-lg bg-[--color-ink] px-4 py-2.5 text-base font-medium text-[--color-page] transition disabled:opacity-50"
+          className="mt-2 rounded-lg bg-ink px-4 py-2.5 text-base font-medium text-page transition disabled:opacity-50"
         >
           {pending ? "One moment…" : submitLabel}
         </button>
 
         <p aria-live="polite" className="min-h-5 text-sm">
           {state.error ? <span className="text-red-700 dark:text-red-400">{state.error}</span> : null}
-          {state.notice ? <span className="text-[--color-ink-soft]">{state.notice}</span> : null}
+          {state.notice ? <span className="text-ink-soft">{state.notice}</span> : null}
         </p>
       </form>
 
-      {footer ? <div className="mt-6 text-sm text-[--color-ink-soft]">{footer}</div> : null}
+      {footer ? <div className="mt-6 text-sm text-ink-soft">{footer}</div> : null}
     </main>
   );
 }
 
 export function AuthLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="underline underline-offset-4 hover:text-[--color-ink]">
+    <Link href={href} className="underline underline-offset-4 hover:text-ink">
       {children}
     </Link>
   );
