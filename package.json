@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "walkthrough": "vitest run tests/walkthrough.test.ts --reporter=verbose --disable-console-intercept"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",
