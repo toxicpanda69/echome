@@ -145,10 +145,3 @@ export class PostgresSessionStore implements SessionStore {
     if (error) throw error;
   }
 }
-
-let cached: PostgresSessionStore | null = null;
-
-export function sessionStore(): SessionStore {
-  cached ??= new PostgresSessionStore();
-  return cached;
-}

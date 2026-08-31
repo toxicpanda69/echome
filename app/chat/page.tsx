@@ -1,14 +1,16 @@
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/app/(auth)/actions";
+import { localSignOut } from "@/app/(auth)/local-actions";
+import { LOCAL_MODE } from "@/lib/local/mode";
 import { Conversation } from "@/components/chat/Conversation";
 import { DecryptionError, SessionKeyDestroyedError } from "@/lib/echo/crypto";
 import { SESSION_CLOSED, SESSION_UNREADABLE } from "@/lib/echo/messages";
-import { sessionStore } from "@/lib/echo/postgres-store";
+import { sessionStore } from "@/lib/echo/store-factory";
 import { resumeOrStartSession } from "@/lib/echo/sessions";
 import { classifyError } from "@/lib/echo/telemetry";
 import { toDisplayTurns, type DisplayTurn } from "@/lib/echo/transcript";
-import { getUser } from "@/lib/supabase/server";
+import { currentUser } from "@/lib/auth/current-user";
 
 /**
  * Resuming happens here, and it is the whole product in one function: the
@@ -20,7 +22,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function ChatPage() {
-  const user = await getUser();
+  const user = await currentUser();
   if (!user) redirect("/login?next=/chat");
 
   let turns: DisplayTurn[];
@@ -38,7 +40,7 @@ export default async function ChatPage() {
     <>
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
         <span className="text-sm font-medium tracking-tight">EchoMe</span>
-        <form action={signOut}>
+        <form action={LOCAL_MODE ? localSignOut : signOut}>
           <button type="submit" className="text-sm text-ink-soft hover:text-ink">
             Sign out
           </button>

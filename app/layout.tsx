@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 
+import { LocalModeBanner } from "@/components/local/LocalModeBanner";
+import { LOCAL_MODE } from "@/lib/local/mode";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +22,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">
+        {LOCAL_MODE ? <LocalModeBanner /> : null}
+        {children}
+      </body>
     </html>
   );
 }

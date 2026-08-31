@@ -10,11 +10,13 @@ import {
   SESSION_UNREADABLE,
   UPSTREAM_UNAVAILABLE,
 } from "@/lib/echo/messages";
-import { sessionStore } from "@/lib/echo/postgres-store";
+import { sessionStore } from "@/lib/echo/store-factory";
 import { appendMessages, resumeOrStartSession } from "@/lib/echo/sessions";
 import { classifyError, emptyMetrics, recordTurn } from "@/lib/echo/telemetry";
 import { speak } from "@/lib/echo/voice";
-import { getUser } from "@/lib/supabase/server";
+import { speakLocally } from "@/lib/local/voice";
+import { LOCAL_MODE } from "@/lib/local/mode";
+import { currentUser } from "@/lib/auth/current-user";
 
 /** node:crypto is used to decrypt the session, so this cannot run on Edge. */
 export const runtime = "nodejs";
@@ -42,7 +44,7 @@ type WireEvent =
 const MAX_MESSAGE_CHARS = 20_000;
 
 export async function POST(request: NextRequest) {
-  const user = await getUser();
+  const user = await currentUser();
   if (!user) return NextResponse.json({ error: NOT_SIGNED_IN }, { status: 401 });
 
   let text: unknown;
@@ -91,7 +93,15 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
 
       try {
-        for await (const event of speak(withUserTurn.messages, { signal: request.signal })) {
+        // Local mode with no API key falls back to a canned responder, so the
+        // whole conversation path can be exercised with no credentials at all.
+        // A real key is always preferred, even locally.
+        const turn =
+          LOCAL_MODE && !process.env.ANTHROPIC_API_KEY
+            ? speakLocally(withUserTurn.messages)
+            : speak(withUserTurn.messages, { signal: request.signal });
+
+        for await (const event of turn) {
           switch (event.type) {
             case "text":
               send({ t: "text", v: event.text });

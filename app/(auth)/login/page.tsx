@@ -1,4 +1,6 @@
 import { SignInPanel } from "@/components/auth/SignInPanel";
+import { LocalSignIn } from "@/components/local/LocalSignIn";
+import { LOCAL_MODE } from "@/lib/local/mode";
 import { LINK_EXPIRED, OAUTH_FAILED } from "@/lib/echo/messages";
 
 /** Banners raised by /auth/callback and /auth/confirm when a round trip fails. */
@@ -13,11 +15,11 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const { next, error } = await searchParams;
+  const destination = next?.startsWith("/") ? next : undefined;
 
-  return (
-    <SignInPanel
-      next={next?.startsWith("/") ? next : undefined}
-      banner={error ? BANNERS[error] : undefined}
-    />
-  );
+  // A completely separate screen rather than a variant of the real one, so the
+  // two can never be confused for each other.
+  if (LOCAL_MODE) return <LocalSignIn next={destination} />;
+
+  return <SignInPanel next={destination} banner={error ? BANNERS[error] : undefined} />;
 }

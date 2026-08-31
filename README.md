@@ -25,6 +25,44 @@ To see this rather than read about it:
 npm run walkthrough
 ```
 
+## Running it without Supabase (local mode)
+
+For trying the app out, there is a development mode that needs no accounts, no
+keys and no database:
+
+```bash
+echo "ECHOME_LOCAL_MODE=1" >> .env.local
+npm run dev
+```
+
+You also need `SESSION_MASTER_KEY` set — that one is not optional, because the
+encryption is not faked. Generate it as described below.
+
+What is replaced: authentication becomes a cookie holding whatever email you
+type, and the session store becomes a JSON file in `.echome-local/`. What is
+**not** replaced: the entire encryption path. Same AES-256-GCM envelope, same
+per-session key, same destruction. Open `.echome-local/sessions.json` and look
+— your words are not in there.
+
+Without `ANTHROPIC_API_KEY`, replies come from a canned local responder that
+streams word by word, so the conversation UI works end to end with nothing
+configured at all. Set a real key and it uses Claude instead. Stub turns are
+recorded with the model `local-stub` so they can never be mistaken for real
+ones.
+
+Sign in with two different addresses to confirm one person cannot see
+another's conversation. Restart the dev server to confirm a conversation
+survives it.
+
+Google, Facebook, magic links and password reset all need Supabase and are
+unavailable in this mode.
+
+> **Local mode is a development auth bypass and refuses to run anywhere else.**
+> If `ECHOME_LOCAL_MODE=1` is set while `NODE_ENV` is production, or on Vercel,
+> [`lib/local/mode.ts`](lib/local/mode.ts) throws at import and the app will not
+> start. A crash on deploy beats a live app with no real login. The whole
+> `lib/local/` directory is scheduled for deletion in Phase 4's security pass.
+
 ## Getting it running
 
 ```bash

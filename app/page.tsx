@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { getUser } from "@/lib/supabase/server";
+import { currentUser } from "@/lib/auth/current-user";
 
 export default async function Home() {
-  redirect((await getUser()) ? "/chat" : "/login");
+  redirect((await currentUser()) ? "/chat" : "/login");
 }
