@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "walkthrough": "vitest run tests/walkthrough.test.ts --reporter=verbose --disable-console-intercept",
-    "doctor": "node --env-file-if-exists=.env.local scripts/doctor.mjs"
+    "doctor": "node --env-file-if-exists=.env.local scripts/doctor.mjs",
+    "prebuild": "node --env-file-if-exists=.env.local scripts/check-build-env.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

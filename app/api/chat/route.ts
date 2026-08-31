@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const store = sessionStore();
+  const store = await sessionStore();
 
   let session;
   try {

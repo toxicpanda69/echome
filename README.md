@@ -57,6 +57,11 @@ survives it.
 Google, Facebook, magic links and password reset all need Supabase and are
 unavailable in this mode.
 
+`next build` refuses to run at all while the flag is set — see
+`scripts/check-build-env.mjs`. Turbopack also warns that the local store's file
+access widens build tracing; that is accurate, harmless, and goes away with the
+directory in Phase 4.
+
 > **Local mode is a development auth bypass and refuses to run anywhere else.**
 > If `ECHOME_LOCAL_MODE=1` is set while `NODE_ENV` is production, or on Vercel,
 > [`lib/local/mode.ts`](lib/local/mode.ts) throws at import and the app will not

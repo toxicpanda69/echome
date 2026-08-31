@@ -27,7 +27,7 @@ export default async function ChatPage() {
 
   let turns: DisplayTurn[];
   try {
-    const session = await resumeOrStartSession(sessionStore(), user.id);
+    const session = await resumeOrStartSession(await sessionStore(), user.id);
     turns = toDisplayTurns(session.transcript);
   } catch (error) {
     if (error instanceof SessionKeyDestroyedError) return <Stopped message={SESSION_CLOSED} />;
