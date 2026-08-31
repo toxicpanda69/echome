@@ -69,7 +69,16 @@ Put it in `SESSION_MASTER_KEY` and back it up. Losing it makes every open
 conversation permanently unreadable — which is the intended failure mode, but
 you would rather not find that out by accident.
 
-Then:
+Then check it before you run it:
+
+```bash
+npm run doctor
+```
+
+That verifies all five variables are set, that `SESSION_MASTER_KEY` is really 32
+bytes, that the three tables exist, that the anon key **cannot** read
+`live_sessions` or `turn_telemetry`, and that your API key can actually reach
+`claude-opus-5`. It never prints a secret. When it comes back green:
 
 ```bash
 npm run dev
@@ -81,6 +90,7 @@ npm run dev
 |---|---|
 | `npm run dev` | development server |
 | `npm run build` | production build |
+| `npm run doctor` | preflight: env, schema, RLS, API key |
 | `npm test` | the full suite |
 | `npm run walkthrough` | narrated lifecycle, prints what the database holds |
 | `npm run typecheck` | `tsc --noEmit` |
