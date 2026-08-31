@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Refreshes the Supabase auth session on every request and gates the app.
+ * Called from proxy.ts, which runs before every matched request.
  *
  * Server Components cannot write cookies, so the token refresh has to happen
  * here or a user gets silently logged out when their access token expires
@@ -10,6 +11,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * would be the most common bug in the app.
  */
 
+// "/auth" covers /auth/callback and /auth/confirm — the OAuth return trip and
+// the emailed-link exchange both have to be reachable while signed out.
 const PUBLIC_PATHS = ["/login", "/signup", "/reset", "/auth"];
 
 export async function updateSession(request: NextRequest) {

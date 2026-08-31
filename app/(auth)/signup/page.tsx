@@ -1,5 +1,6 @@
-import { AuthForm, AuthLink } from "@/components/auth/AuthForm";
 import { signUp } from "@/app/(auth)/actions";
+import { AuthForm, AuthLink } from "@/components/auth/AuthForm";
+import { OAuthButtons, OrDivider } from "@/components/auth/OAuthButtons";
 import { DISCLAIMER } from "@/lib/echo/messages";
 
 export default function SignUpPage() {
@@ -12,6 +13,12 @@ export default function SignUpPage() {
       fields={["email", "password"]}
       passwordLabel="Password (at least 8 characters)"
       passwordAutoComplete="new-password"
+      above={
+        <div className="flex flex-col gap-5">
+          <OAuthButtons />
+          <OrDivider label="or sign up with email" />
+        </div>
+      }
       footer={
         <div className="flex flex-col gap-3">
           <span>

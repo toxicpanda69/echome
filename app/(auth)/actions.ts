@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
+import { isOAuthProvider, PROVIDERS, type OAuthProvider } from "@/lib/auth/providers";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -112,23 +113,74 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * SEAM FOR GOOGLE OAUTH — deliberately not wired up.
+ * Passwordless sign-in. Supabase emails a one-time link that lands on
+ * /auth/confirm, which exchanges it for a session.
  *
- * Everything server-side is in place: this action, and /auth/callback which
- * already exchanges the code for a session. Turning it on is three steps:
- *   1. enable the Google provider in the Supabase dashboard,
- *   2. render a button in components/auth/AuthForm.tsx that calls this,
- *   3. add the redirect URI to the Google console.
- *
- * Nothing else in the codebase assumes password auth, and the profiles trigger
- * fires for OAuth signups the same way.
+ * `shouldCreateUser` is left at its default of true, so a first-time visitor
+ * signing in with a link gets an account — the profiles trigger fires for them
+ * exactly as it does for a password signup.
  */
-export async function signInWithOAuth(provider: "google"): Promise<void> {
+export async function sendMagicLink(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const email = formData.get("email");
+  if (typeof email !== "string" || email.trim().length === 0) {
+    return { error: "Please enter your email address." };
+  }
+
+  const next = formData.get("next");
+  const destination = typeof next === "string" && next.startsWith("/") ? next : "/chat";
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim(),
+    options: {
+      emailRedirectTo: `${await siteUrl()}/auth/confirm?next=${encodeURIComponent(destination)}`,
+    },
+  });
+
+  // Rate limiting is the one failure worth naming, because "try again" is
+  // actively wrong advice when the answer is "wait".
+  if (error?.status === 429) {
+    return { error: "That's a few too many links in a row. Please wait a minute and try again." };
+  }
+
+  // Otherwise the same answer either way, so this never reveals whether an
+  // address has an account.
+  return { notice: "Check your email — there's a link waiting that will sign you in." };
+}
+
+/**
+ * Hand off to a social provider. Returns a redirect to the provider's consent
+ * screen; the round trip comes back to /auth/callback.
+ *
+ * Enabling a provider is a Supabase dashboard toggle plus credentials from the
+ * provider's own console. See the setup steps in the README. Until that is
+ * done, this fails cleanly and the user lands back on /login with a message
+ * rather than on a broken page.
+ */
+export async function signInWithOAuth(provider: OAuthProvider, next?: string): Promise<void> {
+  if (!isOAuthProvider(provider)) redirect("/login?error=oauth");
+
+  const destination = next?.startsWith("/") ? next : "/chat";
+  const callback = new URL(`${await siteUrl()}/auth/callback`);
+  callback.searchParams.set("next", destination);
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: `${await siteUrl()}/auth/callback` },
+    options: {
+      redirectTo: callback.toString(),
+      scopes: PROVIDERS[provider].scopes,
+    },
   });
+
   if (error || !data.url) redirect("/login?error=oauth");
   redirect(data.url);
+}
+
+/** Form-action wrapper: the provider arrives as a hidden field. */
+export async function signInWithProvider(formData: FormData): Promise<void> {
+  const provider = formData.get("provider");
+  if (!isOAuthProvider(provider)) redirect("/login?error=oauth");
+  const next = formData.get("next");
+  await signInWithOAuth(provider, typeof next === "string" ? next : undefined);
 }

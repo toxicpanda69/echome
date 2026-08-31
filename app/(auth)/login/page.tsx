@@ -1,33 +1,23 @@
-import { AuthForm, AuthLink } from "@/components/auth/AuthForm";
-import { signIn } from "@/app/(auth)/actions";
-import { DISCLAIMER_SHORT } from "@/lib/echo/messages";
+import { SignInPanel } from "@/components/auth/SignInPanel";
+import { LINK_EXPIRED, OAUTH_FAILED } from "@/lib/echo/messages";
+
+/** Banners raised by /auth/callback and /auth/confirm when a round trip fails. */
+const BANNERS: Readonly<Record<string, string>> = {
+  oauth: OAUTH_FAILED,
+  link: LINK_EXPIRED,
+};
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
 
   return (
-    <AuthForm
-      title="Welcome back"
-      subtitle="Your conversation is where you left it."
-      action={signIn}
-      submitLabel="Sign in"
-      fields={["email", "password"]}
-      hidden={next?.startsWith("/") ? { next } : undefined}
-      footer={
-        <div className="flex flex-col gap-2">
-          <span>
-            <AuthLink href="/reset">Forgotten your password?</AuthLink>
-          </span>
-          <span>
-            No account yet? <AuthLink href="/signup">Sign up</AuthLink>
-          </span>
-          <span className="pt-2 text-xs">{DISCLAIMER_SHORT}</span>
-        </div>
-      }
+    <SignInPanel
+      next={next?.startsWith("/") ? next : undefined}
+      banner={error ? BANNERS[error] : undefined}
     />
   );
 }

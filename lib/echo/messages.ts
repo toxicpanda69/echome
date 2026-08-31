@@ -46,5 +46,13 @@ export const SESSION_UNREADABLE =
 
 export const NOT_SIGNED_IN = "Please sign in to continue.";
 
+/** A social provider handed back an error, or is not configured yet. */
+export const OAUTH_FAILED =
+  "That sign-in didn't complete. You can try again, or use your email address instead.";
+
+/** An emailed link was expired, already used, or malformed. */
+export const LINK_EXPIRED =
+  "That link has expired or has already been used. Request a new one and it'll work.";
+
 export const GENERIC_ERROR =
   "Something went wrong on our side. Nothing you wrote has been lost. Please try again.";

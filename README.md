@@ -42,10 +42,20 @@ It creates `profiles`, `live_sessions` and `turn_telemetry`, turns RLS on for
 all three, and installs the trigger that creates a profile on signup.
 
 **3. Auth settings.** Under Authentication → URL Configuration set the site URL
-to match `NEXT_PUBLIC_SITE_URL`, and add `<site-url>/auth/confirm` to the
-redirect allow list. Phase 1 uses Supabase's built-in email for confirmation
-and password reset, which is rate limited to a handful per hour — fine for
-testing, replaced by Resend in Phase 3.
+to match `NEXT_PUBLIC_SITE_URL`, and add both of these to the redirect allow
+list:
+
+```
+<site-url>/auth/confirm
+<site-url>/auth/callback
+```
+
+`/auth/confirm` handles emailed links (signup confirmation, password reset,
+magic link). `/auth/callback` handles the return trip from Google and Facebook.
+
+Supabase's built-in email is rate limited to a handful per hour — fine for
+testing, replaced by Resend in Phase 3. That limit applies to magic links too,
+so expect to hit it if you test the link flow repeatedly.
 
 **4. Anthropic.** An API key with access to `claude-opus-5`.
 
@@ -103,17 +113,72 @@ lib/echo/voice.ts         the ONLY module that calls the Claude API
 lib/echo/skill.md         the system prompt — all personality lives here
 lib/echo/messages.ts      user-facing copy: disclaimers and failure wording
 lib/echo/telemetry.ts     content-free metrics
+lib/auth/providers.ts     the social provider registry
+proxy.ts                  session refresh + the signed-out gate
 ```
 
 Two files are wholly the client's to write: `lib/echo/skill.md` (EchoMe's
 voice) and `lib/echo/messages.ts` (what the app says on its own behalf). Both
 currently hold placeholders.
 
-## Seams left open
+## Sign-in methods
 
-**Google OAuth.** `signInWithOAuth` in `app/(auth)/actions.ts` and
-`app/auth/callback/route.ts` are both written and unused. Enabling it is a
-Supabase dashboard toggle plus one button in `components/auth/AuthForm.tsx`.
+Three ways in, all reaching the same account. A person who signs up with Google
+and later uses a magic link on the same address lands on the same profile —
+Supabase links identities by verified email.
+
+| Method | Where the code lives |
+|---|---|
+| Email + password | `signIn` / `signUp` in `app/(auth)/actions.ts` |
+| Magic link (passwordless) | `sendMagicLink`, returns via `/auth/confirm` |
+| Google, Facebook | `signInWithProvider`, returns via `/auth/callback` |
+
+Providers are declared once in [`lib/auth/providers.ts`](lib/auth/providers.ts).
+Adding a fourth means adding an entry there and enabling it in Supabase;
+nothing else in the codebase needs to change.
+
+Until a provider is enabled in the dashboard its button still renders, and
+pressing it returns the user to `/login` with a readable message rather than a
+broken page.
+
+### Enabling Google
+
+1. In the [Google Cloud console](https://console.cloud.google.com), create a
+   project, then **APIs & Services → Credentials → Create OAuth client ID →
+   Web application**.
+2. Configure the OAuth consent screen first if prompted. External user type,
+   and the app stays in Testing until you submit for verification — in Testing
+   only accounts you list can sign in, which is what you want while building.
+3. Under **Authorised redirect URIs** add your Supabase callback, which is
+   your project URL plus `/auth/v1/callback`:
+   ```
+   https://<project-ref>.supabase.co/auth/v1/callback
+   ```
+   This is the Supabase URL, not `echomechat.ai`. A common half hour is lost
+   putting the app's own callback here instead.
+4. Copy the client ID and client secret into Supabase → Authentication →
+   Providers → Google, and enable it.
+
+### Enabling Facebook
+
+1. At [developers.facebook.com](https://developers.facebook.com), create an app
+   of type **Consumer**, then add the **Facebook Login** product.
+2. Under Facebook Login → Settings, add the same Supabase callback to **Valid
+   OAuth Redirect URIs**:
+   ```
+   https://<project-ref>.supabase.co/auth/v1/callback
+   ```
+3. Copy the App ID and App Secret into Supabase → Authentication → Providers →
+   Facebook, and enable it.
+4. **The part that takes time:** Facebook returns no email address until the
+   `email` permission has Advanced Access, which requires app review and
+   business verification. In Development mode the app works for accounts with a
+   role on it (admins, developers, testers), so you can test immediately — but
+   budget real calendar time for verification before launch. We request the
+   `email` scope in `lib/auth/providers.ts`; without it Supabase creates the
+   user with no email address on file.
+
+## Seams left open
 
 **Session destruction.** `destroySession` is complete and tested, and nothing
 in the UI calls it. That is deliberate: the closing ritual that decides what to

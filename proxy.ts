@@ -1,8 +1,12 @@
 import type { NextRequest } from "next/server";
 
-import { updateSession } from "@/lib/supabase/middleware";
+import { updateSession } from "@/lib/supabase/session";
 
-export async function middleware(request: NextRequest) {
+/**
+ * Next 16 renamed the middleware convention to `proxy`. The behaviour is
+ * unchanged: refresh the Supabase session on every request and gate the app.
+ */
+export default async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
