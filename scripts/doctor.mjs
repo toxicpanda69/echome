@@ -29,23 +29,37 @@ function section(title) {
 
 // ---------------------------------------------------------------------------
 
-section("Environment");
+const LOCAL_MODE = process.env.ECHOME_LOCAL_MODE === "1";
 
-const REQUIRED = [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "ANTHROPIC_API_KEY",
-  "SESSION_MASTER_KEY",
-];
+section(LOCAL_MODE ? "Environment (local mode)" : "Environment");
+
+if (LOCAL_MODE) {
+  report(
+    WARN,
+    "Local mode is ON",
+    "Authentication is fake and sessions live in .echome-local/. Never deploy this.",
+  );
+}
+
+// In local mode Supabase is not used at all, so requiring its variables would
+// send someone hunting for credentials they do not need.
+const REQUIRED = LOCAL_MODE
+  ? ["SESSION_MASTER_KEY"]
+  : [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "ANTHROPIC_API_KEY",
+      "SESSION_MASTER_KEY",
+    ];
 
 const missing = REQUIRED.filter((name) => !process.env[name]);
-if (missing.length === REQUIRED.length) {
+if (missing.length === REQUIRED.length && !LOCAL_MODE) {
   report(FAIL, "No environment loaded", "Copy .env.example to .env.local and fill it in.");
 } else if (missing.length > 0) {
   report(FAIL, "Missing variables", missing.join(", "));
 } else {
-  report(PASS, "All five variables present");
+  report(PASS, `Required variable${REQUIRED.length === 1 ? "" : "s"} present`);
 }
 
 const placeholders = REQUIRED.filter((name) => (process.env[name] ?? "").includes("placeholder"));
@@ -80,7 +94,9 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (url && serviceKey && anonKey && !placeholders.length) {
+if (LOCAL_MODE) {
+  report(WARN, "Skipped Supabase checks", "Local mode does not use Supabase.");
+} else if (url && serviceKey && anonKey && !placeholders.length) {
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   const anon = createClient(url, anonKey, { auth: { persistSession: false } });
 
@@ -141,6 +157,9 @@ if (apiKey && !apiKey.includes("placeholder")) {
       report(FAIL, `Model list returned ${response.status}`);
     } else {
       report(PASS, "API key accepted");
+      if (LOCAL_MODE) {
+        report(PASS, "Replies will come from real Claude, not the local stub");
+      }
       const body = await response.json();
       const ids = (body.data ?? []).map((model) => model.id);
       if (ids.includes("claude-opus-5")) {
@@ -156,6 +175,12 @@ if (apiKey && !apiKey.includes("placeholder")) {
   } catch (error) {
     report(FAIL, "Could not reach api.anthropic.com", error.name);
   }
+} else if (LOCAL_MODE) {
+  report(
+    WARN,
+    "No ANTHROPIC_API_KEY — replies will come from the local stub",
+    "Add a real key to .env.local and restart to talk to Claude.",
+  );
 } else {
   report(WARN, "Skipped Anthropic check", "Fill in ANTHROPIC_API_KEY first.");
 }
