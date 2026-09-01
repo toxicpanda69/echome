@@ -1,11 +1,22 @@
-# EchoMe — Phase 1
+# EchoMe
 
 A private, logged-in web app where a person has a reflective conversation with
 Claude. Read [CLAUDE.md](CLAUDE.md) before changing anything: the no-transcript
 rule shapes almost every decision in here.
 
-Phase 1 is the foundation and the conversation. The memory pipeline, closing
-ritual, payments and xTiles are later phases and are deliberately absent.
+All four phases are built: the conversation, the memory pipeline, payments and
+guardrails, and launch hardening.
+
+**Four things still need the client**, and each is isolated to one file so
+supplying it is an edit rather than a rewrite:
+
+| File | What is missing |
+|---|---|
+| `lib/echo/schema.ts` | The real EchoCompass / EchoMap field shapes. The ones there are a working placeholder. |
+| `lib/config/pricing.ts` | Final amounts. Stripe charges whatever the price ids say, so a wrong number here is a wrong label, not a wrong charge. |
+| `lib/config/crisis.ts` | The crisis resource list and its wording. **Deliberately empty** — a wrong number or a closed line is worse than none, so the app shows a generic fallback until it is filled in. |
+| `lib/xtiles/http.ts` | The xTiles API. Every method throws rather than guessing; the interface, the fake, the token storage and the retry path are all finished around it. |
+| `lib/echo/skill.md` | EchoMe's voice. All personality lives in this one file. |
 
 ## The one thing to understand
 
@@ -256,8 +267,38 @@ in the UI calls it. That is deliberate: the closing ritual that decides what to
 keep is Phase 2, and until it exists there should be no way to end a
 conversation by accident.
 
-## Not built yet, on purpose
+## The closing ritual
 
-Stripe, xTiles, the closing ritual, the inactivity nudge, the admin dashboard,
-memory distillation. Building them now would bake in assumptions the client's
-build spec has not settled.
+How a conversation ends, and the ordering is the safety property:
+
+1. **Propose** — distil the conversation, mark it `closing` so no new turns
+   land, and show the person what was drawn out.
+2. **Choose** — they tick what to keep. Nothing is pre-ticked: "keep it all" is
+   not a choice, and "keep nothing" is a trap.
+3. **Commit** — write to their xTiles, **then** destroy the session.
+
+If the write fails, the session is left exactly as it was and the message says
+so. Destroying first would mean a network blip erases somebody's conversation
+permanently and they would never know what they lost. `tests/ritual.test.ts`
+covers that path four ways.
+
+## The erasure audit
+
+The most important test in the codebase. `npm test` runs it.
+
+It takes a conversation through the whole ritual and then greps every surface
+the application can write to — every version of the stored row in four
+encodings, the receipts, the telemetry, everything written to stdout and
+stderr, and the xTiles workspace — for fragments of what was said. A single hit
+fails the build.
+
+It has already earned its place: it caught the local stub distiller echoing a
+person's opening words verbatim into a kept entry.
+
+## What the watchman is and is not
+
+A `claude-haiku-4-5` pass over each message that returns one word. It never
+rewrites, never blocks, and runs *alongside* the turn rather than in front of
+it — a person mid-thought is not made to wait on a safety classifier, and a
+classifier outage must never silence someone reaching out. What is stored is a
+category and a timestamp. There is no column for the message.
