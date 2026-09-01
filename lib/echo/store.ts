@@ -38,6 +38,8 @@ export interface PayloadUpdate {
 
 export interface SessionStore {
   findOpen(userId: string): Promise<SessionRow | null>;
+  /** The session part-way through the closing ritual, if there is one. */
+  findClosing(userId: string): Promise<SessionRow | null>;
   find(sessionId: string, userId: string): Promise<SessionRow | null>;
   create(session: NewSession): Promise<SessionRow>;
   /** Replaces the payload and bumps last_active_at. */
@@ -69,6 +71,13 @@ export class InMemorySessionStore implements SessionStore {
   async findOpen(userId: string): Promise<SessionRow | null> {
     for (const row of this.rows.values()) {
       if (row.userId === userId && row.status === "open") return row;
+    }
+    return null;
+  }
+
+  async findClosing(userId: string): Promise<SessionRow | null> {
+    for (const row of this.rows.values()) {
+      if (row.userId === userId && row.status === "closing") return row;
     }
     return null;
   }

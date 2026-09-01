@@ -42,7 +42,14 @@ if (requested) {
 /** True only in local development, with the flag explicitly set. */
 export const LOCAL_MODE = requested;
 
-/** Where the local store keeps its encrypted rows. Gitignored. */
+/**
+ * Where local mode keeps its files. Gitignored.
+ *
+ * The literal is repeated at each call site rather than imported, because the
+ * bundler can only scope a filesystem path statically when the literal is in
+ * the same module — importing it makes it trace the whole project into every
+ * production build. Keep them in step.
+ */
 export const LOCAL_DATA_DIR = ".echome-local";
 
 /**

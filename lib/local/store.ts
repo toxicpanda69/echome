@@ -3,7 +3,7 @@ import "server-only";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { assertLocalMode, LOCAL_DATA_DIR } from "@/lib/local/mode";
+import { assertLocalMode } from "@/lib/local/mode";
 import {
   SessionConflictError,
   type NewSession,
@@ -38,7 +38,7 @@ interface StoredRow {
 }
 
 function filePath(): string {
-  return join(process.cwd(), LOCAL_DATA_DIR, "sessions.json");
+  return join(process.cwd(), ".echome-local", "sessions.json");
 }
 
 function toRow(stored: StoredRow): SessionRow {
@@ -78,7 +78,7 @@ function readAll(): StoredRow[] {
 }
 
 function writeAll(rows: StoredRow[]): void {
-  mkdirSync(join(process.cwd(), LOCAL_DATA_DIR), { recursive: true });
+  mkdirSync(join(process.cwd(), ".echome-local"), { recursive: true });
   writeFileSync(filePath(), `${JSON.stringify(rows, null, 2)}\n`, "utf8");
 }
 
@@ -89,6 +89,11 @@ export class LocalFileSessionStore implements SessionStore {
 
   async findOpen(userId: string): Promise<SessionRow | null> {
     const found = readAll().find((row) => row.userId === userId && row.status === "open");
+    return found ? toRow(found) : null;
+  }
+
+  async findClosing(userId: string): Promise<SessionRow | null> {
+    const found = readAll().find((row) => row.userId === userId && row.status === "closing");
     return found ? toRow(found) : null;
   }
 

@@ -3,7 +3,7 @@ import "server-only";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { assertLocalMode, LOCAL_DATA_DIR } from "@/lib/local/mode";
+import { assertLocalMode } from "@/lib/local/mode";
 import type { TurnMetrics } from "@/lib/echo/telemetry";
 
 /**
@@ -25,7 +25,7 @@ export interface LocalTelemetryEntry extends TurnMetrics {
 }
 
 function filePath(): string {
-  return join(process.cwd(), LOCAL_DATA_DIR, "telemetry.jsonl");
+  return join(process.cwd(), ".echome-local", "telemetry.jsonl");
 }
 
 export function recordTurnLocally(sessionId: string, metrics: TurnMetrics): void {
@@ -46,7 +46,7 @@ export function recordTurnLocally(sessionId: string, metrics: TurnMetrics): void
     cacheCreationInputTokens: metrics.cacheCreationInputTokens,
   };
 
-  mkdirSync(join(process.cwd(), LOCAL_DATA_DIR), { recursive: true });
+  mkdirSync(join(process.cwd(), ".echome-local"), { recursive: true });
   appendFileSync(filePath(), `${JSON.stringify(entry)}\n`, "utf8");
 }
 

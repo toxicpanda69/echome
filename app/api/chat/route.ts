@@ -14,6 +14,9 @@ import { sessionStore } from "@/lib/echo/store-factory";
 import { appendMessages, resumeOrStartSession } from "@/lib/echo/sessions";
 import { classifyError, emptyMetrics, recordTurn } from "@/lib/echo/telemetry";
 import { speak } from "@/lib/echo/voice";
+import { accessFor, consumeFreeIntro } from "@/lib/billing/entitlements";
+import { recordFlag, shouldSurfaceResources, watch } from "@/lib/echo/watchman";
+import { consume } from "@/lib/rate-limit";
 import { speakLocally } from "@/lib/local/voice";
 import { LOCAL_MODE } from "@/lib/local/mode";
 import { currentUser } from "@/lib/auth/current-user";
@@ -37,6 +40,8 @@ export const dynamic = "force-dynamic";
 
 type WireEvent =
   | { t: "text"; v: string }
+  /** The watchman flagged this message. The interface surfaces resources. */
+  | { t: "flag"; v: string }
   | { t: "refusal"; v: string }
   | { t: "error"; v: string }
   | { t: "done" };
@@ -63,6 +68,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Rate limit before anything expensive. Fails open — see lib/rate-limit.ts.
+  const verdict = await consume("chat", user.id);
+  if (!verdict.allowed) {
+    return NextResponse.json(
+      { error: RATE_LIMITED },
+      { status: 429, headers: { "Retry-After": String(verdict.retryAfterSeconds) } },
+    );
+  }
+
+  // Has this person paid, or do they still have their free conversation?
+  const access = await accessFor(user.id);
+  if (!access.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          access.reason === "lapsed"
+            ? "Your access has lapsed. You can restart it from your account page."
+            : "This is where the free conversation ends. Choosing a plan keeps it going.",
+        needsPurchase: true,
+      },
+      { status: 402 },
+    );
+  }
+
   const store = await sessionStore();
 
   let session;
@@ -86,6 +115,20 @@ export async function POST(request: NextRequest) {
     content: text,
   });
 
+  if (access.reason === "free-intro" && session.transcript.messages.length === 0) {
+    await consumeFreeIntro(user.id);
+  }
+
+  // The watchman runs alongside the turn, never in front of it. A person mid
+  // thought is not made to wait on a safety classifier, and a classifier
+  // outage must never silence someone reaching out.
+  const watchman = watch(text)
+    .then(async (category) => {
+      await recordFlag(user.id, session.row.id, category);
+      return category;
+    })
+    .catch(() => "none" as const);
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -93,6 +136,12 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
 
       try {
+        // Surfaced as soon as the classifier answers, without holding up the
+        // reply. It never blocks and never rewrites — it only adds.
+        void watchman.then((category) => {
+          if (shouldSurfaceResources(category)) send({ t: "flag", v: category });
+        });
+
         // Local mode with no API key falls back to a canned responder, so the
         // whole conversation path can be exercised with no credentials at all.
         // A real key is always preferred, even locally.

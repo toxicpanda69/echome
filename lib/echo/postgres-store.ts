@@ -74,6 +74,17 @@ export class PostgresSessionStore implements SessionStore {
     return data ? toRow(data) : null;
   }
 
+  async findClosing(userId: string): Promise<SessionRow | null> {
+    const { data, error } = await this.db
+      .from(TABLE)
+      .select(COLUMNS)
+      .eq("user_id", userId)
+      .eq("status", "closing")
+      .maybeSingle<RawRow>();
+    if (error) throw error;
+    return data ? toRow(data) : null;
+  }
+
   async find(sessionId: string, userId: string): Promise<SessionRow | null> {
     const { data, error } = await this.db
       .from(TABLE)

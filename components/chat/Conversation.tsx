@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Composer } from "@/components/chat/Composer";
+import { CrisisPanel } from "@/components/chat/CrisisPanel";
 import { Disclaimer } from "@/components/chat/Disclaimer";
 import { GENERIC_ERROR } from "@/lib/echo/messages";
 import type { DisplayTurn } from "@/lib/echo/transcript";
@@ -28,6 +29,11 @@ export function Conversation({ initialTurns }: ConversationProps) {
   const [streaming, setStreaming] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const [sending, setSending] = useState(false);
+  /** Set by the watchman. Sticky for the rest of the session, never dismissed
+      automatically — it should not vanish while someone is reading it. */
+  const [flagged, setFlagged] = useState(false);
+  /** Their free conversation has ended, or their access lapsed. */
+  const [needsPurchase, setNeedsPurchase] = useState(false);
 
   const bottom = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -53,6 +59,7 @@ export function Conversation({ initialTurns }: ConversationProps) {
 
       if (!response.ok || !response.body) {
         const body = await response.json().catch(() => null);
+        if (body?.needsPurchase) setNeedsPurchase(true);
         throw new Error(body?.error ?? GENERIC_ERROR);
       }
 
@@ -75,6 +82,7 @@ export function Conversation({ initialTurns }: ConversationProps) {
 
           const event = JSON.parse(line) as
             | { t: "text"; v: string }
+            | { t: "flag"; v: string }
             | { t: "refusal"; v: string }
             | { t: "error"; v: string }
             | { t: "done" };
@@ -82,6 +90,8 @@ export function Conversation({ initialTurns }: ConversationProps) {
           if (event.t === "text") {
             reply += event.v;
             setStreaming(reply);
+          } else if (event.t === "flag") {
+            setFlagged(true);
           } else if (event.t === "refusal") {
             // Discard whatever partial text arrived and show the calm wording.
             reply = "";
@@ -129,6 +139,16 @@ export function Conversation({ initialTurns }: ConversationProps) {
             {streaming !== null ? <Turn role="assistant" text={streaming} pending /> : null}
           </div>
 
+          {flagged ? <CrisisPanel /> : null}
+
+          {needsPurchase ? (
+            <p className="mt-5 rounded-xl border border-line bg-raised px-4 py-3 text-sm leading-relaxed">
+              <a href="/pricing" className="underline underline-offset-4">
+                Choose a plan to keep going
+              </a>
+            </p>
+          ) : null}
+
           {notice ? (
             <p
               role="status"
@@ -148,6 +168,16 @@ export function Conversation({ initialTurns }: ConversationProps) {
 
       <div className="sticky bottom-0">
         <Composer disabled={sending} onSend={send} />
+        <div className="flex items-center justify-center gap-3 pb-1">
+          {turns.length > 0 ? (
+            <a
+              href="/close"
+              className="text-xs text-ink-soft underline underline-offset-4 hover:text-ink"
+            >
+              Finish this conversation
+            </a>
+          ) : null}
+        </div>
         <Disclaimer />
       </div>
     </div>

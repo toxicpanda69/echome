@@ -51,6 +51,9 @@ class RecordingStore implements SessionStore {
   findOpen(userId: string) {
     return this.inner.findOpen(userId);
   }
+  findClosing(userId: string) {
+    return this.inner.findClosing(userId);
+  }
   find(sessionId: string, userId: string) {
     return this.inner.find(sessionId, userId);
   }
