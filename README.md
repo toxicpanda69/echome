@@ -57,6 +57,24 @@ survives it.
 Google, Facebook, magic links and password reset all need Supabase and are
 unavailable in this mode.
 
+### The test console
+
+Sign in, then open <http://localhost:3000/test.html>. It talks to the same
+`/api/chat` the real UI uses — your API key never leaves the server — but shows
+what the polished interface hides:
+
+- every NDJSON event as it arrives, timestamped
+- the decrypted transcript, and how many encrypted bytes are on disk
+- per-turn telemetry: model, duration, token counts, and cache reads
+
+That last column is the one worth watching. Prompt caching can only pay off
+from the second turn onwards, so a cache read of 0 on turn one is correct and a
+0 on turn three is a bug. Telemetry in local mode is appended to
+`.echome-local/telemetry.jsonl`; in production it goes to `turn_telemetry`.
+
+`/api/local/session`, which the console reads, returns a decrypted transcript
+over HTTP. It is a 404 outside local mode, and there is a test for that.
+
 `next build` refuses to run at all while the flag is set — see
 `scripts/check-build-env.mjs`. Turbopack also warns that the local store's file
 access widens build tracing; that is accurate, harmless, and goes away with the

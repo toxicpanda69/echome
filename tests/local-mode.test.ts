@@ -90,6 +90,62 @@ describe("when the flag is absent", () => {
   });
 });
 
+describe("the local-only inspection endpoint", () => {
+  it("is a 404 when local mode is off", async () => {
+    // It returns a decrypted transcript over HTTP. That is acceptable for a
+    // console talking to your own machine and must not exist anywhere else.
+    const { GET } = await import("@/app/api/local/session/route");
+    const response = await GET();
+    expect(response.status).toBe(404);
+  });
+
+  it("writes nothing that could hold user text", async () => {
+    process.env.ECHOME_LOCAL_MODE = "1";
+    const { recordTurnLocally } = await import("@/lib/local/telemetry-sink");
+    const { mkdtempSync, readFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+
+    // The sink writes relative to cwd, so run it somewhere disposable.
+    const previous = process.cwd();
+    const scratch = mkdtempSync(join(tmpdir(), "echome-telemetry-"));
+    process.chdir(scratch);
+
+    try {
+      recordTurnLocally("session-1", {
+        durationMs: 1200,
+        model: "claude-opus-5",
+        stopReason: "end_turn",
+        errorClass: null,
+        inputTokens: 900,
+        outputTokens: 40,
+        cacheReadInputTokens: 850,
+        cacheCreationInputTokens: 0,
+      });
+
+      const line = readFileSync(join(scratch, ".echome-local", "telemetry.jsonl"), "utf8").trim();
+      const entry = JSON.parse(line) as Record<string, unknown>;
+
+      // Every field is a number, a short label, or an id. If a field ever
+      // appears here that is not on this list, it needs justifying.
+      expect(Object.keys(entry).sort()).toEqual([
+        "at",
+        "cacheCreationInputTokens",
+        "cacheReadInputTokens",
+        "durationMs",
+        "errorClass",
+        "inputTokens",
+        "model",
+        "outputTokens",
+        "sessionId",
+        "stopReason",
+      ]);
+    } finally {
+      process.chdir(previous);
+    }
+  });
+});
+
 describe("when it is on", () => {
   beforeEach(() => {
     process.env.ECHOME_LOCAL_MODE = "1";

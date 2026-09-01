@@ -9,6 +9,7 @@ import {
 } from "@anthropic-ai/sdk";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { LOCAL_MODE } from "@/lib/local/mode";
 
 /**
  * Content-free telemetry.
@@ -75,6 +76,18 @@ export async function recordTurn(
   sessionId: string,
   metrics: TurnMetrics,
 ): Promise<void> {
+  if (LOCAL_MODE) {
+    // Supabase is not available here; write to .echome-local/telemetry.jsonl
+    // instead so the numbers are still visible during development.
+    const { recordTurnLocally } = await import("@/lib/local/telemetry-sink");
+    try {
+      recordTurnLocally(sessionId, metrics);
+    } catch (error) {
+      console.warn(`[telemetry] local write failed: ${classifyError(error)}`);
+    }
+    return;
+  }
+
   try {
     const { error } = await createAdminClient().from("turn_telemetry").insert({
       user_id: userId,

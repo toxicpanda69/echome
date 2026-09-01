@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EchoMe — test console</title>
+<style>
+  :root {
+    --bg: #faf9f7; --panel: #fff; --ink: #23201d; --soft: #6b645d;
+    --line: #e3dfd9; --accent: #7a5cff; --warn: #b45309; --warn-bg: #fef3c7;
+    --ok: #15803d; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17161a; --panel: #1e1d22; --ink: #eae7e2; --soft: #a29b93;
+      --line: #34313a; --accent: #a58cff; --warn: #fbbf24; --warn-bg: #3a2c08;
+      --ok: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .banner {
+    background: var(--warn-bg); color: var(--warn); padding: 8px 16px;
+    font-size: 13px; text-align: center; border-bottom: 1px solid var(--line);
+  }
+  header {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline;
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+  }
+  h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  .meta { font: 12px/1.5 var(--mono); color: var(--soft); }
+  .meta b { color: var(--ink); font-weight: 600; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--bg); padding: 16px; min-height: 40vh; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--soft); margin: 0 0 12px; font-weight: 600;
+  }
+  .turn { margin-bottom: 14px; }
+  .turn .who {
+    font: 11px var(--mono); text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--soft); margin-bottom: 3px;
+  }
+  .turn .body { white-space: pre-wrap; }
+  .turn.user .body {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 12px;
+  }
+  #log {
+    font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all;
+    max-height: 52vh; overflow-y: auto; margin: 0;
+  }
+  #log .t { color: var(--soft); }
+  #log .k-done { color: var(--ok); }
+  #log .k-refusal, #log .k-error { color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; font: 12px var(--mono); }
+  th, td { text-align: right; padding: 4px 7px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--soft); font-weight: 600; }
+  td.hit { color: var(--ok); font-weight: 600; }
+  form { display: flex; gap: 8px; padding: 14px 16px; border-top: 1px solid var(--line); }
+  textarea {
+    flex: 1; resize: vertical; min-height: 46px; border: 1px solid var(--line);
+    border-radius: 9px; padding: 10px 12px; font: inherit;
+    background: var(--panel); color: var(--ink);
+  }
+  button {
+    border: 0; border-radius: 9px; background: var(--accent); color: #fff;
+    padding: 0 18px; font: 600 14px system-ui; cursor: pointer;
+  }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button.ghost { background: transparent; color: var(--soft); border: 1px solid var(--line); }
+  .empty { color: var(--soft); font-style: italic; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  Local test console &mdash; talks to the same <code>/api/chat</code> the real UI uses.
+  Your API key stays on the server.
+</div>
+
+<header>
+  <h1>EchoMe test console</h1>
+  <div class="meta" id="status">connecting&hellip;</div>
+</header>
+
+<main>
+  <section>
+    <h2>Conversation</h2>
+    <div id="turns"><p class="empty">Loading&hellip;</p></div>
+  </section>
+
+  <section>
+    <div class="row">
+      <h2 style="margin:0;flex:1">Raw stream</h2>
+      <button class="ghost" id="clear" type="button">Clear</button>
+    </div>
+    <pre id="log"><span class="empty">Each NDJSON event from /api/chat appears here as it arrives.</span></pre>
+
+    <h2 style="margin-top:22px">Telemetry &mdash; content-free, straight from the server</h2>
+    <table>
+      <thead>
+        <tr><th>when</th><th>model</th><th>ms</th><th>in</th><th>out</th><th>cache read</th><th>stop</th></tr>
+      </thead>
+      <tbody id="telemetry"><tr><td colspan="7" class="empty">No turns yet.</td></tr></tbody>
+    </table>
+    <p class="meta" id="cacheNote"></p>
+  </section>
+</main>
+
+<form id="composer">
+  <textarea id="input" placeholder="Type something and press Send. Shift+Enter for a new line." aria-label="Message"></textarea>
+  <button type="submit" id="send">Send</button>
+</form>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const turnsEl = $("turns");
+const logEl = $("log");
+let logStarted = false;
+
+function stamp() {
+  return new Date().toISOString().slice(11, 23);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+
+function log(kind, detail) {
+  if (!logStarted) { logEl.textContent = ""; logStarted = true; }
+  const line = document.createElement("div");
+  line.innerHTML =
+    '<span class="t">' + stamp() + '</span> ' +
+    '<span class="k-' + kind + '">' + kind.padEnd(7) + '</span> ' +
+    escapeHtml(detail);
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function renderTurns(turns) {
+  if (!turns.length) {
+    turnsEl.innerHTML = '<p class="empty">Nothing yet. This is a fresh session.</p>';
+    return;
+  }
+  turnsEl.innerHTML = "";
+  for (const turn of turns) addTurn(turn.role, turn.text);
+}
+
+function addTurn(role, text) {
+  const empty = turnsEl.querySelector(".empty");
+  if (empty) turnsEl.innerHTML = "";
+  const el = document.createElement("div");
+  el.className = "turn " + role;
+  const who = document.createElement("div");
+  who.className = "who";
+  who.textContent = role;
+  const body = document.createElement("div");
+  body.className = "body";
+  body.textContent = text;
+  el.appendChild(who);
+  el.appendChild(body);
+  turnsEl.appendChild(el);
+  return body;
+}
+
+function renderTelemetry(entries) {
+  const tbody = $("telemetry");
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No turns yet.</td></tr>';
+    $("cacheNote").textContent = "";
+    return;
+  }
+
+  tbody.innerHTML = entries.map(function (e) {
+    const cache = e.cacheReadInputTokens;
+    const cacheCell = cache > 0
+      ? '<td class="hit">' + cache + '</td>'
+      : '<td>' + (cache === null || cache === undefined ? "&mdash;" : cache) + '</td>';
+    return '<tr>' +
+      '<td>' + e.at.slice(11, 19) + '</td>' +
+      '<td>' + escapeHtml(e.model || "—") + '</td>' +
+      '<td>' + e.durationMs + '</td>' +
+      '<td>' + (e.inputTokens === null ? "&mdash;" : e.inputTokens) + '</td>' +
+      '<td>' + (e.outputTokens === null ? "&mdash;" : e.outputTokens) + '</td>' +
+      cacheCell +
+      '<td>' + escapeHtml(e.errorClass || e.stopReason || "—") + '</td>' +
+      '</tr>';
+  }).join("");
+
+  // The claim worth checking by eye: caching can only pay off from turn two.
+  const withCache = entries.filter((e) => e.cacheReadInputTokens > 0).length;
+  $("cacheNote").textContent =
+    entries.length < 2
+      ? "Send a second message — the prompt cache can only hit from turn two onwards."
+      : withCache > 0
+        ? "Prompt cache hit on " + withCache + " of " + entries.length + " recorded turns."
+        : "No cache reads recorded yet. Expected on turn one; a concern after that.";
+}
+
+async function refresh() {
+  let response;
+  try {
+    response = await fetch("/api/local/session", { cache: "no-store" });
+  } catch (error) {
+    $("status").textContent = "server unreachable — is npm run dev running?";
+    return null;
+  }
+
+  if (response.status === 401) {
+    $("status").innerHTML = 'not signed in — <a href="/login">sign in first</a>, then reload';
+    turnsEl.innerHTML = '<p class="empty">Sign in, then reload this page.</p>';
+    return null;
+  }
+  if (response.status === 404) {
+    $("status").textContent = "this console only exists in local mode (ECHOME_LOCAL_MODE=1)";
+    return null;
+  }
+  if (!response.ok) {
+    $("status").textContent = "session endpoint returned " + response.status;
+    return null;
+  }
+
+  const data = await response.json();
+  $("status").innerHTML =
+    "<b>" + escapeHtml(data.user.email || data.user.id) + "</b> &middot; session <b>" +
+    escapeHtml(data.session.id.slice(0, 8)) + "</b> &middot; <b>" +
+    data.session.encryptedBytes + "</b> encrypted bytes on disk &middot; replies from <b>" +
+    escapeHtml(data.responder) + "</b>";
+  renderTurns(data.turns);
+  renderTelemetry(data.telemetry);
+  return data;
+}
+
+$("clear").addEventListener("click", () => {
+  logEl.innerHTML = '<span class="empty">Cleared.</span>';
+  logStarted = false;
+});
+
+$("composer").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const text = $("input").value.trim();
+  if (!text) return;
+
+  $("input").value = "";
+  $("send").disabled = true;
+  addTurn("user", text);
+  log("send", "POST /api/chat  " + text.length + " chars");
+
+  const startedAt = performance.now();
+  let body = null;
+  let reply = "";
+  let events = 0;
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text }),
+    });
+    log("http", response.status + " " + (response.headers.get("content-type") || ""));
+
+    if (!response.ok || !response.body) {
+      const failed = await response.json().catch(() => ({}));
+      log("error", failed.error || "request failed");
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    for (;;) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+
+      let newline;
+      while ((newline = buffer.indexOf("\n")) !== -1) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (!line) continue;
+
+        events += 1;
+        const evt = JSON.parse(line);
+        if (evt.t === "text") {
+          reply += evt.v;
+          if (!body) body = addTurn("assistant", "");
+          body.textContent = reply;
+          log("text", JSON.stringify(evt.v));
+        } else if (evt.t === "done") {
+          log("done", events + " events, " + Math.round(performance.now() - startedAt) + "ms round trip");
+        } else {
+          log(evt.t, evt.v);
+        }
+      }
+    }
+  } catch (error) {
+    log("error", error.message);
+  } finally {
+    $("send").disabled = false;
+    // Telemetry is written server-side once the stream closes.
+    setTimeout(refresh, 300);
+  }
+});
+
+$("input").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    $("composer").requestSubmit();
+  }
+});
+
+refresh();
+</script>
+</body>
+</html>
