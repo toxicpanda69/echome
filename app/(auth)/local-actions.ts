@@ -23,7 +23,7 @@ export async function localSignIn(_prev: AuthState, formData: FormData): Promise
   await signInLocal(email);
 
   const next = formData.get("next");
-  redirect(typeof next === "string" && next.startsWith("/") ? next : "/chat");
+  redirect(typeof next === "string" && next.startsWith("/") ? next : "/welcome");
 }
 
 export async function localSignOut(): Promise<void> {

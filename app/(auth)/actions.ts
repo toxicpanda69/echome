@@ -58,7 +58,7 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
 
   // Supabase returns a user with an empty identities array when the address is
   // already registered. Say the same thing either way rather than confirming it.
-  if (data.session) redirect("/chat");
+  if (data.session) redirect("/welcome");
   return { notice: "Check your email for a link to confirm your account." };
 }
 
@@ -71,7 +71,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   if (error) return { error: "That email and password don't match. Please try again." };
 
   const next = formData.get("next");
-  redirect(typeof next === "string" && next.startsWith("/") ? next : "/chat");
+  redirect(typeof next === "string" && next.startsWith("/") ? next : "/welcome");
 }
 
 export async function requestPasswordReset(
@@ -103,7 +103,7 @@ export async function updatePassword(_prev: AuthState, formData: FormData): Prom
   if (error) {
     return { error: "That reset link has expired. Please request a new one." };
   }
-  redirect("/chat");
+  redirect("/welcome");
 }
 
 export async function signOut(): Promise<void> {
@@ -127,7 +127,7 @@ export async function sendMagicLink(_prev: AuthState, formData: FormData): Promi
   }
 
   const next = formData.get("next");
-  const destination = typeof next === "string" && next.startsWith("/") ? next : "/chat";
+  const destination = typeof next === "string" && next.startsWith("/") ? next : "/welcome";
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
@@ -160,7 +160,7 @@ export async function sendMagicLink(_prev: AuthState, formData: FormData): Promi
 export async function signInWithOAuth(provider: OAuthProvider, next?: string): Promise<void> {
   if (!isOAuthProvider(provider)) redirect("/login?error=oauth");
 
-  const destination = next?.startsWith("/") ? next : "/chat";
+  const destination = next?.startsWith("/") ? next : "/welcome";
   const callback = new URL(`${await siteUrl()}/auth/callback`);
   callback.searchParams.set("next", destination);
 

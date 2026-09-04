@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   if (!code) redirect("/login?error=oauth");
 
   const next = searchParams.get("next");
-  const destination = next?.startsWith("/") ? next : "/chat";
+  const destination = next?.startsWith("/") ? next : "/welcome";
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);

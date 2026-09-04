@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const next = searchParams.get("next");
-  const destination = next?.startsWith("/") ? next : "/chat";
+  const destination = next?.startsWith("/") ? next : "/welcome";
 
   if (!tokenHash || !type) redirect("/login?error=link");
 

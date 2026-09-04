@@ -59,7 +59,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/chat";
+    url.pathname = "/welcome";
     url.search = "";
     return NextResponse.redirect(url);
   }
