@@ -17,8 +17,8 @@ export function LocalSignIn({ next }: { next?: string }) {
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-medium tracking-tight">Sign in (local)</h1>
-      <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+      <h1 className="text-center text-2xl font-medium tracking-tight">Sign in (local)</h1>
+      <p className="mt-2 text-center text-sm leading-relaxed text-ink-soft">
         Any email address will do — nothing is verified and no password is asked for. Use two
         different addresses to check that one person cannot see another&rsquo;s conversation.
       </p>

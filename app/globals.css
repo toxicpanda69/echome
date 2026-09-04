@@ -1,29 +1,41 @@
 @import "tailwindcss";
 
 /*
- * Neutral placeholder styling. Brand comes later — nothing here should be
- * mistaken for a design decision. Warm greys rather than pure black and white,
- * because a reflective conversation reads better on paper than on a screen.
+ * A warm, quiet palette — earthy neutrals with one moss-green accent, paired
+ * with a serif display face and a plain sans body. The same visual language
+ * as the team's other companion-style build, applied here: warm parchment
+ * rather than clinical white, rounded cards, calm colour.
  *
  * @theme declares the tokens and generates the utilities (bg-page, text-ink,
  * border-line, …). Dark mode then redefines the same custom properties on
  * :root, which every generated utility already reads through var().
  */
 @theme {
-  --color-page: oklch(0.985 0.003 90);
-  --color-ink: oklch(0.25 0.008 80);
-  --color-ink-soft: oklch(0.52 0.008 80);
-  --color-line: oklch(0.9 0.005 85);
-  --color-raised: oklch(1 0 0);
+  --color-page: oklch(0.97 0.014 92);
+  --color-ink: oklch(0.24 0.025 50);
+  --color-ink-soft: oklch(0.5 0.03 60);
+  --color-line: oklch(0.87 0.018 80);
+  --color-raised: oklch(0.995 0.006 92);
+  --color-accent: oklch(0.5 0.09 148);
+  --color-accent-soft: oklch(0.93 0.03 145);
+  --color-warn: oklch(0.62 0.14 50);
+  --color-warn-soft: oklch(0.93 0.05 55);
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Karla", ui-sans-serif, system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-page: oklch(0.19 0.006 80);
-    --color-ink: oklch(0.93 0.004 85);
-    --color-ink-soft: oklch(0.68 0.006 82);
-    --color-line: oklch(0.29 0.006 80);
-    --color-raised: oklch(0.235 0.006 80);
+    --color-page: oklch(0.2 0.014 90);
+    --color-ink: oklch(0.93 0.012 85);
+    --color-ink-soft: oklch(0.68 0.02 80);
+    --color-line: oklch(0.32 0.018 85);
+    --color-raised: oklch(0.245 0.016 88);
+    --color-accent: oklch(0.68 0.1 150);
+    --color-accent-soft: oklch(0.28 0.045 150);
+    --color-warn: oklch(0.72 0.13 55);
+    --color-warn-soft: oklch(0.3 0.06 55);
   }
 }
 
@@ -34,7 +46,12 @@ html {
 body {
   background: var(--color-page);
   color: var(--color-ink);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
 }
 
 /* Composer textarea: grow with content, never show a scrollbar mid-thought. */

@@ -155,7 +155,7 @@ export function Conversation({ initialTurns }: ConversationProps) {
               className={`mt-5 rounded-xl border px-4 py-3 text-sm leading-relaxed ${
                 notice.kind === "refusal"
                   ? "border-line bg-raised text-ink-soft"
-                  : "border-amber-300/60 bg-amber-50 text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-200"
+                  : "border-warn/40 bg-warn-soft text-ink"
               }`}
             >
               {notice.text}
@@ -196,7 +196,7 @@ function Turn({
   if (role === "user") {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-raised px-4 py-2.5 text-base leading-relaxed shadow-sm ring-1 ring-line">
+        <p className="max-w-[85%] whitespace-pre-wrap rounded-3xl rounded-br-lg bg-raised px-4 py-2.5 text-base leading-relaxed shadow-sm ring-1 ring-line">
           {text}
         </p>
       </div>

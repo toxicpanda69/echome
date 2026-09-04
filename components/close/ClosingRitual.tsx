@@ -212,7 +212,7 @@ export function ClosingRitual() {
 
   return (
     <Shell title="That didn&rsquo;t work">
-      <p className="rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-200">
+      <p className="rounded-xl border border-warn/40 bg-warn-soft px-4 py-3 text-sm leading-relaxed text-ink">
         {message}
       </p>
       <div className="flex flex-wrap gap-3">
@@ -291,7 +291,7 @@ function Primary({ onClick, children }: { onClick: () => void; children: React.R
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg bg-ink px-4 py-2.5 text-base font-medium text-page transition disabled:opacity-50"
+      className="rounded-full bg-ink px-6 py-2.5 text-base font-medium text-page transition disabled:opacity-50"
     >
       {children}
     </button>
@@ -311,7 +311,7 @@ function Secondary({
     <a
       href={href}
       onClick={onNavigate}
-      className="rounded-lg border border-line px-4 py-2.5 text-base text-ink-soft transition hover:text-ink"
+      className="rounded-full border border-line px-6 py-2.5 text-base text-ink-soft transition hover:border-accent hover:text-ink"
     >
       {children}
     </a>

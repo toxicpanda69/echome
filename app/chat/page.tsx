@@ -4,6 +4,7 @@ import { signOut } from "@/app/(auth)/actions";
 import { localSignOut } from "@/app/(auth)/local-actions";
 import { LOCAL_MODE } from "@/lib/local/mode";
 import { Conversation } from "@/components/chat/Conversation";
+import { EchoMark } from "@/components/EchoMark";
 import { DecryptionError, SessionKeyDestroyedError } from "@/lib/echo/crypto";
 import { SESSION_CLOSED, SESSION_UNREADABLE } from "@/lib/echo/messages";
 import { sessionStore } from "@/lib/echo/store-factory";
@@ -39,9 +40,15 @@ export default async function ChatPage() {
   return (
     <>
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
-        <span className="text-sm font-medium tracking-tight">EchoMe</span>
+        <span className="flex items-center gap-2">
+          <EchoMark size={24} />
+          <span className="text-sm font-medium tracking-tight">EchoMe</span>
+        </span>
         <form action={LOCAL_MODE ? localSignOut : signOut}>
-          <button type="submit" className="text-sm text-ink-soft hover:text-ink">
+          <button
+            type="submit"
+            className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition hover:bg-raised hover:text-ink"
+          >
             Sign out
           </button>
         </form>

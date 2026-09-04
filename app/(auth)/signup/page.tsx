@@ -1,5 +1,6 @@
 import { signUp } from "@/app/(auth)/actions";
-import { AuthForm, AuthLink } from "@/components/auth/AuthForm";
+import { AuthForm } from "@/components/auth/AuthForm";
+import { AuthTabs } from "@/components/auth/AuthTabs";
 import { OAuthButtons, OrDivider } from "@/components/auth/OAuthButtons";
 import { DISCLAIMER } from "@/lib/echo/messages";
 
@@ -15,18 +16,14 @@ export default function SignUpPage() {
       passwordAutoComplete="new-password"
       above={
         <div className="flex flex-col gap-5">
+          <AuthTabs active="signup" />
           <OAuthButtons />
           <OrDivider label="or sign up with email" />
         </div>
       }
       footer={
-        <div className="flex flex-col gap-3">
-          <span>
-            Already have an account? <AuthLink href="/login">Sign in</AuthLink>
-          </span>
-          {/* The disclaimer appears at signup as well as persistently in chat. */}
-          <p className="text-xs leading-relaxed">{DISCLAIMER}</p>
-        </div>
+        // The disclaimer appears at signup as well as persistently in chat.
+        <p className="text-center text-xs leading-relaxed">{DISCLAIMER}</p>
       }
     />
   );

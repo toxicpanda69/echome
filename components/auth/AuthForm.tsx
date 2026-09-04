@@ -49,8 +49,8 @@ export function AuthForm({
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
-      {subtitle ? <p className="mt-2 text-sm text-ink-soft">{subtitle}</p> : null}
+      <h1 className="text-center text-2xl font-medium tracking-tight">{title}</h1>
+      {subtitle ? <p className="mt-2 text-center text-sm text-ink-soft">{subtitle}</p> : null}
 
       {above ? <div className="mt-8">{above}</div> : null}
 

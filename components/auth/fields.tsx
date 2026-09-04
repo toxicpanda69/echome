@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 
+import { EchoMark } from "@/components/EchoMark";
+
 /** Shared form pieces, so the sign-in panel and the other auth pages match. */
 
 export const INPUT =
-  "w-full rounded-lg border border-line bg-raised px-3 py-2.5 text-base " +
-  "outline-none transition focus:border-ink-soft focus:ring-2 focus:ring-line";
+  "w-full rounded-xl border border-line bg-raised px-3.5 py-2.5 text-base " +
+  "outline-none transition focus:border-accent focus:ring-2 focus:ring-accent-soft";
 
 export function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
   return (
@@ -29,13 +31,19 @@ export function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
 export function PasswordField({
   label = "Password",
   autoComplete = "current-password",
+  trailing,
 }: {
   label?: string;
   autoComplete?: "current-password" | "new-password";
+  /** Rendered top-right of the label row — the "Forgotten password?" link. */
+  trailing?: React.ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm text-ink-soft">{label}</span>
+      <span className="flex items-baseline justify-between">
+        <span className="text-sm text-ink-soft">{label}</span>
+        {trailing}
+      </span>
       <input className={INPUT} type="password" name="password" autoComplete={autoComplete} required minLength={8} />
     </label>
   );
@@ -52,9 +60,10 @@ export function PrimaryButton({
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 rounded-lg bg-ink px-4 py-2.5 text-base font-medium text-page transition disabled:opacity-50"
+      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-ink px-6 py-3 text-base font-medium text-page transition hover:opacity-90 disabled:opacity-50"
     >
       {pending ? "One moment…" : children}
+      {pending ? null : <span aria-hidden="true">→</span>}
     </button>
   );
 }
@@ -71,16 +80,36 @@ export function FormMessage({ error, notice }: { error?: string; notice?: string
 
 export function AuthLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="underline underline-offset-4 hover:text-ink">
+    <Link href={href} className="text-accent underline underline-offset-4 hover:text-ink">
       {children}
     </Link>
   );
 }
 
+/**
+ * The card every auth screen sits inside — a soft radial glow behind a
+ * rounded, bordered card, with EchoMe's mark anchoring the top. Same shell
+ * language across sign in, sign up, reset, and local mode, so the "feel" is
+ * consistent everywhere a person signs in.
+ */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-5 py-12">
-      {children}
+    <main
+      className="flex min-h-dvh items-center justify-center px-5 py-10"
+      style={{
+        background:
+          "radial-gradient(120% 100% at 50% 0%, color-mix(in oklch, var(--color-accent-soft) 45%, var(--color-page)) 0%, var(--color-page) 60%)",
+      }}
+    >
+      <div className="w-full max-w-sm rounded-3xl border border-line bg-raised px-7 py-9 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_18px_40px_-20px_rgba(0,0,0,0.25)]">
+        <div className="mb-5 flex justify-center">
+          <span className="flex items-center gap-2 rounded-full border border-line bg-page px-3 py-1.5">
+            <EchoMark size={20} />
+            <span className="text-sm font-medium">EchoMe</span>
+          </span>
+        </div>
+        {children}
+      </div>
     </main>
   );
 }

@@ -5,7 +5,7 @@
  */
 export function LocalModeBanner() {
   return (
-    <div className="border-b border-amber-400/50 bg-amber-100 px-4 py-2 text-center text-xs leading-relaxed text-amber-950 dark:border-amber-600/40 dark:bg-amber-950/60 dark:text-amber-100">
+    <div className="border-b border-warn/40 bg-warn-soft px-4 py-2 text-center text-xs leading-relaxed text-ink">
       <strong className="font-semibold">Local mode.</strong> Sign-in is fake and there is no
       database — sessions live in <code className="font-mono">.echome-local/</code>. Encryption is
       real.
