@@ -8,21 +8,30 @@ import { OAUTH_PROVIDERS, PROVIDERS, type OAuthProvider } from "@/lib/auth/provi
 /**
  * One button per social provider, driven by the registry in lib/auth/providers.
  *
- * Each is its own form so the provider travels as a hidden field and the whole
- * thing works before hydration — someone on a slow connection can sign in
- * while the JavaScript is still arriving.
+ * A provider without real credentials yet (PROVIDERS[id].enabled === false)
+ * renders as a disabled "Soon" button instead of a live form — same mark, same
+ * label, same shape, so turning it on later is a one-line flag flip in
+ * providers.ts and nothing about this component changes.
+ *
+ * Enabled buttons are each their own form so the provider travels as a hidden
+ * field and the whole thing works before hydration — someone on a slow
+ * connection can sign in while the JavaScript is still arriving.
  */
 
 export function OAuthButtons({ next }: { next?: string }) {
   return (
     <div className="flex flex-col gap-2.5">
-      {OAUTH_PROVIDERS.map((provider) => (
-        <form key={provider} action={signInWithProvider}>
-          <input type="hidden" name="provider" value={provider} />
-          {next ? <input type="hidden" name="next" value={next} /> : null}
-          <ProviderButton provider={provider} />
-        </form>
-      ))}
+      {OAUTH_PROVIDERS.map((provider) =>
+        PROVIDERS[provider].enabled ? (
+          <form key={provider} action={signInWithProvider}>
+            <input type="hidden" name="provider" value={provider} />
+            {next ? <input type="hidden" name="next" value={next} /> : null}
+            <ProviderButton provider={provider} />
+          </form>
+        ) : (
+          <TempProviderButton key={provider} provider={provider} />
+        ),
+      )}
     </div>
   );
 }
@@ -39,6 +48,27 @@ function ProviderButton({ provider }: { provider: OAuthProvider }) {
     >
       <ProviderMark provider={provider} />
       <span>{pending ? "One moment…" : `Continue with ${label}`}</span>
+    </button>
+  );
+}
+
+/** Not wired up yet — same shape as the real button, visibly inert. */
+function TempProviderButton({ provider }: { provider: OAuthProvider }) {
+  const { label } = PROVIDERS[provider];
+
+  return (
+    <button
+      type="button"
+      disabled
+      aria-disabled="true"
+      title={`${label} sign-in isn't connected yet`}
+      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-dashed border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink-soft opacity-60 sm:text-base"
+    >
+      <ProviderMark provider={provider} />
+      <span className="whitespace-nowrap">Continue with {label}</span>
+      <span className="ml-0.5 shrink-0 rounded-full bg-line px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-soft">
+        Soon
+      </span>
     </button>
   );
 }

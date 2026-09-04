@@ -27,12 +27,26 @@ export interface ProviderConfig {
    * this is only what we need on top.
    */
   readonly scopes?: string;
+  /**
+   * Whether this provider has real credentials configured in the Supabase
+   * dashboard (see the README's "Enabling Google" / "Enabling Facebook"
+   * steps). While false, the button renders disabled with a "Soon" badge
+   * instead of a live sign-in form — showing a working-looking button that
+   * fails against a placeholder OAuth app is worse than an honest one that
+   * says it isn't ready yet.
+   *
+   * Flipping this to true is the ONLY code change needed to go live once
+   * credentials are in place — signInWithProvider and the callback route are
+   * already wired and untouched by this flag.
+   */
+  readonly enabled: boolean;
 }
 
 export const PROVIDERS: Readonly<Record<OAuthProvider, ProviderConfig>> = {
   google: {
     id: "google",
     label: "Google",
+    enabled: false,
   },
   facebook: {
     id: "facebook",
@@ -40,5 +54,6 @@ export const PROVIDERS: Readonly<Record<OAuthProvider, ProviderConfig>> = {
     // Facebook returns no email address without this, and granting it requires
     // Advanced Access on the app — see the setup steps in the README.
     scopes: "email",
+    enabled: false,
   },
 };
