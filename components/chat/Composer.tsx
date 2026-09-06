@@ -49,7 +49,7 @@ export function Composer({ disabled, onSend }: ComposerProps) {
       <button
         type="submit"
         disabled={disabled}
-        className="mb-0.5 shrink-0 rounded-full bg-ink px-4 py-2.5 text-sm font-medium text-page transition disabled:opacity-40"
+        className="mb-0.5 shrink-0 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-on-accent transition disabled:opacity-40"
       >
         Send
       </button>

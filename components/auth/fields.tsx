@@ -60,7 +60,7 @@ export function PrimaryButton({
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-ink px-6 py-3 text-base font-medium text-page transition hover:opacity-90 disabled:opacity-50"
+      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-medium text-on-accent transition hover:opacity-90 disabled:opacity-50"
     >
       {pending ? "One moment…" : children}
       {pending ? null : <span aria-hidden="true">→</span>}

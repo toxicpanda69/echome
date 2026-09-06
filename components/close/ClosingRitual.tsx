@@ -291,7 +291,7 @@ function Primary({ onClick, children }: { onClick: () => void; children: React.R
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full bg-ink px-6 py-2.5 text-base font-medium text-page transition disabled:opacity-50"
+      className="rounded-full bg-accent px-6 py-2.5 text-base font-medium text-on-accent transition disabled:opacity-50"
     >
       {children}
     </button>

@@ -34,7 +34,7 @@ export default async function WelcomePage({
       </p>
 
       {checkout === "complete" ? (
-        <p className="mt-5 rounded-xl border border-accent/40 bg-accent-soft px-3.5 py-2.5 text-center text-sm leading-relaxed text-ink">
+        <p className="mt-5 rounded-xl border border-success/40 bg-success-soft px-3.5 py-2.5 text-center text-sm leading-relaxed text-ink">
           Payment received — you&rsquo;re all set.
         </p>
       ) : null}
@@ -57,7 +57,7 @@ export default async function WelcomePage({
           >
             <span className="flex items-center gap-2 text-base font-medium">
               xTiles connected
-              <span aria-hidden="true" className="text-accent">
+              <span aria-hidden="true" className="text-success">
                 ✓
               </span>
             </span>

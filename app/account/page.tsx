@@ -45,7 +45,7 @@ export default async function AccountPage({
             </button>
           </form>
         ) : (
-          <a href="/pricing" className="self-start rounded-lg bg-ink px-4 py-2.5 font-medium text-page">
+          <a href="/pricing" className="self-start rounded-lg bg-accent px-4 py-2.5 font-medium text-on-accent">
             Choose a plan
           </a>
         )}

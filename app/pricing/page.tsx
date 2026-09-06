@@ -50,7 +50,7 @@ export default async function PricingPage({
                 <input type="hidden" name="tier" value={tier.id} />
                 <button
                   type="submit"
-                  className="w-full rounded-lg bg-ink px-4 py-2.5 font-medium text-page"
+                  className="w-full rounded-lg bg-accent px-4 py-2.5 font-medium text-on-accent"
                 >
                   Choose {tier.name}
                 </button>

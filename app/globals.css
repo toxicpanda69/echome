@@ -1,25 +1,39 @@
 @import "tailwindcss";
 
 /*
- * A warm, quiet palette — earthy neutrals with one moss-green accent, paired
- * with a serif display face and a plain sans body. The same visual language
- * as the team's other companion-style build, applied here: warm parchment
- * rather than clinical white, rounded cards, calm colour.
+ * EchoMe's real brand palette, pulled from the marketing site: a violet
+ * accent for primary actions, deep indigo for chrome-level fills, pale
+ * lavender for tinted surfaces, and a warm charcoal (not pure black) for
+ * text — the same family the homepage uses for its hero CTAs, footer, and
+ * section backgrounds.
  *
  * @theme declares the tokens and generates the utilities (bg-page, text-ink,
  * border-line, …). Dark mode then redefines the same custom properties on
  * :root, which every generated utility already reads through var().
  */
 @theme {
-  --color-page: oklch(0.97 0.014 92);
-  --color-ink: oklch(0.24 0.025 50);
-  --color-ink-soft: oklch(0.5 0.03 60);
-  --color-line: oklch(0.87 0.018 80);
-  --color-raised: oklch(0.995 0.006 92);
-  --color-accent: oklch(0.5 0.09 148);
-  --color-accent-soft: oklch(0.93 0.03 145);
-  --color-warn: oklch(0.62 0.14 50);
-  --color-warn-soft: oklch(0.93 0.05 55);
+  --color-page: oklch(0.98 0.006 300);
+  --color-ink: oklch(0.22 0.03 300);
+  --color-ink-soft: oklch(0.52 0.02 295);
+  --color-line: oklch(0.89 0.015 290);
+  --color-raised: oklch(0.995 0.003 290);
+  /* The vivid violet used for every primary CTA on the marketing site
+     ("Start Reflecting", "Try EchoMe", "Download the free guide"). */
+  --color-accent: oklch(0.48 0.16 295);
+  --color-accent-soft: oklch(0.94 0.025 292);
+  /* Text laid on top of a filled --color-accent button. A fixed light value
+     rather than --color-page, because --color-page inverts to a dark indigo
+     in dark mode and --color-accent is deliberately kept mid-dark in both
+     themes so a light label always has enough contrast on it. */
+  --color-on-accent: oklch(0.98 0.008 290);
+  /* The site's "isn't for you" red, reused as the warning tone. */
+  --color-warn: oklch(0.58 0.19 25);
+  --color-warn-soft: oklch(0.95 0.03 25);
+  /* The site's "is for you" green checkmark — a success/affirmative signal,
+     kept separate from --color-accent on purpose: the brand hue means
+     "primary action," this means "yes, done, correct." */
+  --color-success: oklch(0.55 0.14 145);
+  --color-success-soft: oklch(0.94 0.035 145);
 
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-body: "Karla", ui-sans-serif, system-ui, sans-serif;
@@ -27,15 +41,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-page: oklch(0.2 0.014 90);
-    --color-ink: oklch(0.93 0.012 85);
-    --color-ink-soft: oklch(0.68 0.02 80);
-    --color-line: oklch(0.32 0.018 85);
-    --color-raised: oklch(0.245 0.016 88);
-    --color-accent: oklch(0.68 0.1 150);
-    --color-accent-soft: oklch(0.28 0.045 150);
-    --color-warn: oklch(0.72 0.13 55);
-    --color-warn-soft: oklch(0.3 0.06 55);
+    /* Deep indigo, the same family as the marketing site's footer. */
+    --color-page: oklch(0.19 0.035 290);
+    --color-ink: oklch(0.94 0.015 290);
+    --color-ink-soft: oklch(0.72 0.02 290);
+    --color-line: oklch(0.32 0.03 290);
+    --color-raised: oklch(0.245 0.035 290);
+    --color-accent: oklch(0.58 0.15 295);
+    --color-accent-soft: oklch(0.28 0.06 292);
+    --color-on-accent: oklch(0.98 0.008 290);
+    --color-warn: oklch(0.7 0.15 25);
+    --color-warn-soft: oklch(0.32 0.07 25);
+    --color-success: oklch(0.68 0.13 145);
+    --color-success-soft: oklch(0.3 0.05 145);
   }
 }
 
