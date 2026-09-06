@@ -76,3 +76,113 @@ h1, h2, h3, .font-display {
 textarea {
   field-sizing: content;
 }
+
+/*
+ * Motion vocabulary for loading states: a slow breathing mark, ripples
+ * expanding away from it, three waiting dots, and a gentle rise-in for
+ * content as it arrives. Kept slow and soft on purpose — nothing here should
+ * read as urgency, given what this app is for.
+ */
+@keyframes echo-breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.88; }
+}
+
+@keyframes echo-ripple {
+  0% { transform: scale(0.7); opacity: 0.55; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+@keyframes echo-dot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+@keyframes echo-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.echo-breathe {
+  animation: echo-breathe 2.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.echo-ripple {
+  animation: echo-ripple 2.6s ease-out infinite;
+  transform-origin: center;
+}
+
+.echo-dot {
+  animation: echo-dot 1.4s ease-in-out infinite;
+}
+
+.echo-rise {
+  animation: echo-rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .echo-breathe, .echo-ripple, .echo-dot, .echo-rise {
+    animation: none;
+  }
+}
+
+/*
+ * The custom cursor. CustomCursor.tsx only adds `has-custom-cursor` to <html>
+ * after confirming a real mouse and no reduced-motion preference, so this
+ * never fires for touch devices — the native cursor is left alone there.
+ *
+ * Position is set via left/top in JS, not transform, so the breathing scale
+ * animation (which needs transform) on the inner dot never fights with it.
+ */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+.custom-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9999;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0;
+  transition: width 0.18s ease, height 0.18s ease, opacity 0.18s ease;
+}
+
+.custom-cursor.is-visible {
+  opacity: 1;
+}
+
+.custom-cursor.is-hover {
+  width: 36px;
+  height: 36px;
+}
+
+.custom-cursor.is-active {
+  width: 14px;
+  height: 14px;
+}
+
+.custom-cursor__dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  /* Dark purple, derived from the brand accent rather than a hardcoded hex,
+     so it stays "the same purple" as the rest of the app in both themes. */
+  background: color-mix(in oklch, var(--color-accent) 65%, black 35%);
+  opacity: 0.75;
+  animation: cursor-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes cursor-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-cursor__dot { animation: none; }
+}

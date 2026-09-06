@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { EchoLoader } from "@/components/EchoLoader";
+import { EchoMark } from "@/components/EchoMark";
 import { entryId, type Distillation } from "@/lib/echo/schema";
 
 /**
@@ -121,7 +123,7 @@ export function ClosingRitual() {
   if (stage === "distilling") {
     return (
       <Shell title="Reading back through it">
-        <p className="text-ink-soft">This takes a moment. Nothing has been changed yet.</p>
+        <EchoLoader label="This takes a moment. Nothing has been changed yet." />
       </Shell>
     );
   }
@@ -190,9 +192,7 @@ export function ClosingRitual() {
   if (stage === "writing") {
     return (
       <Shell title="Writing to your workspace">
-        <p className="text-ink-soft">
-          Your conversation is still here until this succeeds.
-        </p>
+        <EchoLoader label="Your conversation is still here until this succeeds." />
       </Shell>
     );
   }
@@ -226,6 +226,10 @@ export function ClosingRitual() {
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-4 px-5 py-14">
+      <span className="mb-2 flex items-center gap-2">
+        <EchoMark size={22} />
+        <span className="text-sm font-medium tracking-tight text-ink-soft">EchoMe</span>
+      </span>
       <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
       {children}
     </main>

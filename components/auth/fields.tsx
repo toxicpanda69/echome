@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
+import { EchoDots } from "@/components/EchoLoader";
 import { EchoMark } from "@/components/EchoMark";
+import { passwordStrength } from "@/lib/auth/password-strength";
 
 /** Shared form pieces, so the sign-in panel and the other auth pages match. */
 
@@ -38,14 +41,55 @@ export function PasswordField({
   /** Rendered top-right of the label row — the "Forgotten password?" link. */
   trailing?: React.ReactNode;
 }) {
+  // The strength meter only makes sense while someone is choosing a new
+  // password — signing in with an existing one gets no meter.
+  const showStrength = autoComplete === "new-password";
+  const [value, setValue] = useState("");
+
   return (
     <label className="flex flex-col gap-1.5">
       <span className="flex items-baseline justify-between">
         <span className="text-sm text-ink-soft">{label}</span>
         {trailing}
       </span>
-      <input className={INPUT} type="password" name="password" autoComplete={autoComplete} required minLength={8} />
+      <input
+        className={INPUT}
+        type="password"
+        name="password"
+        autoComplete={autoComplete}
+        required
+        minLength={8}
+        value={showStrength ? value : undefined}
+        onChange={showStrength ? (event) => setValue(event.target.value) : undefined}
+      />
+      {showStrength ? <PasswordStrengthMeter value={value} /> : null}
     </label>
+  );
+}
+
+/** A bar that fills and recolors as the password gets stronger, plus a label
+    for anyone using a screen reader. Width and color both transition, so
+    typing reads as continuous motion rather than a state that snaps. */
+function PasswordStrengthMeter({ value }: { value: string }) {
+  const { level, label } = passwordStrength(value);
+  const widthPercent = value.length === 0 ? 0 : ((level + 1) / 5) * 100;
+  const color =
+    level <= 1 ? "var(--color-warn)" : level === 2 ? "var(--color-accent)" : "var(--color-success)";
+
+  return (
+    <div className="mt-1 flex flex-col gap-1" aria-hidden={value.length === 0}>
+      <div className="h-1.5 overflow-hidden rounded-full bg-line">
+        <div
+          className="h-full rounded-full transition-[width,background-color] duration-300 ease-out"
+          style={{ width: `${widthPercent}%`, backgroundColor: color }}
+        />
+      </div>
+      {value.length > 0 ? (
+        <p role="status" className="text-xs text-ink-soft">
+          {label}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -62,7 +106,7 @@ export function PrimaryButton({
       disabled={pending}
       className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-medium text-on-accent transition hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "One moment…" : children}
+      {pending ? <EchoDots label="One moment…" className="text-on-accent" /> : children}
       {pending ? null : <span aria-hidden="true">→</span>}
     </button>
   );

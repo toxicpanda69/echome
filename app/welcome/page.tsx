@@ -42,26 +42,34 @@ export default async function WelcomePage({
       <div className="mt-7 flex flex-col gap-3">
         <a
           href="/chat"
-          className="flex flex-col gap-0.5 rounded-2xl border border-line bg-page px-4 py-3.5 transition hover:border-accent"
+          className="echo-rise group flex items-center gap-3.5 rounded-2xl border border-line bg-page px-4 py-3.5 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)]"
         >
-          <span className="text-base font-medium">Start a conversation</span>
-          <span className="text-sm text-ink-soft">
-            Pick up where you left off, or begin something new.
+          <IconBadge tone="accent">
+            <ChatIcon />
+          </IconBadge>
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="text-base font-medium">Start a conversation</span>
+            <span className="text-sm text-ink-soft">
+              Pick up where you left off, or begin something new.
+            </span>
           </span>
+          <Chevron />
         </a>
 
         {connected ? (
           <a
             href="/account"
-            className="flex flex-col gap-0.5 rounded-2xl border border-line bg-page px-4 py-3.5 transition hover:border-accent"
+            className="echo-rise group flex items-center gap-3.5 rounded-2xl border border-line bg-page px-4 py-3.5 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)]"
+            style={{ animationDelay: "70ms" }}
           >
-            <span className="flex items-center gap-2 text-base font-medium">
-              xTiles connected
-              <span aria-hidden="true" className="text-success">
-                ✓
-              </span>
+            <IconBadge tone="success">
+              <CheckIcon />
+            </IconBadge>
+            <span className="flex flex-1 flex-col gap-0.5">
+              <span className="text-base font-medium">xTiles connected</span>
+              <span className="text-sm text-ink-soft">What you keep from a conversation goes here.</span>
             </span>
-            <span className="text-sm text-ink-soft">What you keep from a conversation goes here.</span>
+            <Chevron />
           </a>
         ) : (
           <form action="/api/xtiles/connect" method="post">
@@ -69,12 +77,19 @@ export default async function WelcomePage({
                 isn't wired up to a real endpoint yet either. */}
             <button
               type="submit"
-              className="flex w-full flex-col gap-0.5 rounded-2xl border border-dashed border-line bg-page px-4 py-3.5 text-left transition hover:border-accent"
+              className="echo-rise group flex w-full items-center gap-3.5 rounded-2xl border border-dashed border-line bg-page px-4 py-3.5 text-left transition hover:-translate-y-0.5 hover:border-accent hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)]"
+              style={{ animationDelay: "70ms" }}
             >
-              <span className="text-base font-medium">Connect your xTiles workspace</span>
-              <span className="text-sm text-ink-soft">
-                So there&rsquo;s somewhere for what you keep to go.
+              <IconBadge tone="accent">
+                <TilesIcon />
+              </IconBadge>
+              <span className="flex flex-1 flex-col gap-0.5">
+                <span className="text-base font-medium">Connect your xTiles workspace</span>
+                <span className="text-sm text-ink-soft">
+                  So there&rsquo;s somewhere for what you keep to go.
+                </span>
               </span>
+              <Chevron />
             </button>
           </form>
         )}
@@ -82,5 +97,94 @@ export default async function WelcomePage({
 
       <p className="mt-6 text-center text-xs leading-relaxed text-ink-soft">{DISCLAIMER}</p>
     </AuthShell>
+  );
+}
+
+function IconBadge({ tone, children }: { tone: "accent" | "success"; children: React.ReactNode }) {
+  const toneClass =
+    tone === "success" ? "bg-success-soft text-success" : "bg-accent-soft text-accent";
+  return (
+    <span
+      className={`flex size-11 shrink-0 items-center justify-center rounded-xl transition group-hover:scale-105 ${toneClass}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-ink-soft transition group-hover:translate-x-0.5 group-hover:text-ink"
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 4.5h16v12H9l-4.5 4V4.5Z" />
+      <path d="M8 9.5h8M8 13h5" />
+    </svg>
+  );
+}
+
+function TilesIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 13l4.5 4.5L19 7" />
+    </svg>
   );
 }

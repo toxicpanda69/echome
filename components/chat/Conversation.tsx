@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Composer } from "@/components/chat/Composer";
 import { CrisisPanel } from "@/components/chat/CrisisPanel";
 import { Disclaimer } from "@/components/chat/Disclaimer";
+import { EchoDots } from "@/components/EchoLoader";
 import { GENERIC_ERROR } from "@/lib/echo/messages";
 import type { DisplayTurn } from "@/lib/echo/transcript";
 
@@ -195,7 +196,7 @@ function Turn({
 }) {
   if (role === "user") {
     return (
-      <div className="flex justify-end">
+      <div className="echo-rise flex justify-end">
         <p className="max-w-[85%] whitespace-pre-wrap rounded-3xl rounded-br-lg bg-raised px-4 py-2.5 text-base leading-relaxed shadow-sm ring-1 ring-line">
           {text}
         </p>
@@ -203,8 +204,18 @@ function Turn({
     );
   }
 
+  // Before the first token of a reply arrives, `text` is still empty — show
+  // the waiting dots instead of an empty paragraph with just a cursor.
+  if (pending && text.length === 0) {
+    return (
+      <div className="echo-rise">
+        <EchoDots label="EchoMe is reflecting" />
+      </div>
+    );
+  }
+
   return (
-    <p className="whitespace-pre-wrap text-base leading-relaxed">
+    <p className="echo-rise whitespace-pre-wrap text-base leading-relaxed">
       {text}
       {pending ? (
         <span

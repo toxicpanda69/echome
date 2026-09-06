@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { CustomCursor } from "@/components/CustomCursor";
 import { LocalModeBanner } from "@/components/local/LocalModeBanner";
 import { LOCAL_MODE } from "@/lib/local/mode";
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-dvh antialiased">
+        <CustomCursor />
         {LOCAL_MODE ? <LocalModeBanner /> : null}
         {children}
       </body>
