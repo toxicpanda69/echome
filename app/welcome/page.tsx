@@ -65,9 +65,11 @@ export default async function WelcomePage({
           </a>
         ) : (
           <form action="/api/xtiles/connect" method="post">
+            {/* Dashed border, same as the temp Google/Facebook buttons — this
+                isn't wired up to a real endpoint yet either. */}
             <button
               type="submit"
-              className="flex w-full flex-col gap-0.5 rounded-2xl border border-line bg-page px-4 py-3.5 text-left transition hover:border-accent"
+              className="flex w-full flex-col gap-0.5 rounded-2xl border border-dashed border-line bg-page px-4 py-3.5 text-left transition hover:border-accent"
             >
               <span className="text-base font-medium">Connect your xTiles workspace</span>
               <span className="text-sm text-ink-soft">
