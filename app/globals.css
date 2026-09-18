@@ -186,3 +186,31 @@ html.has-custom-cursor * {
 @media (prefers-reduced-motion: reduce) {
   .custom-cursor__dot { animation: none; }
 }
+
+/*
+ * The two decorative rings behind the auth cards drift slowly, like they're
+ * adrift rather than spinning up for something — long, easy durations and
+ * gentle easing on purpose, in keeping with the rest of this app's motion.
+ * Different durations for the two so they never fall into lockstep.
+ */
+@keyframes auth-orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(22px, 28px) scale(1.08); }
+}
+
+@keyframes auth-orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-24px, -18px) scale(1.06); }
+}
+
+.auth-orb-a {
+  animation: auth-orb-drift-a 16s ease-in-out infinite;
+}
+
+.auth-orb-b {
+  animation: auth-orb-drift-b 20s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-orb-a, .auth-orb-b { animation: none; }
+}

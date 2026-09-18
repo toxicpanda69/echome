@@ -164,3 +164,62 @@ Phase 4 of EchoMe: get it ready for real people. Re-read CLAUDE.md.
    when their session can't be decrypted. Every one of those needs a calm, human
    message — this app is used by people in a reflective state.
 ```
+
+---
+
+## Next steps — closing the gaps before launch
+
+All four phases above are built and running (see `README.md`). What's left is not
+new phases — it's the seams each phase deliberately left open, waiting on
+something only the client or a real backend can supply. Checked against the
+actual code as of this writing:
+
+### Blocked on the client (Todd Savard)
+
+These files are placeholders on purpose — see the header comment in each for
+why guessing would be worse than waiting:
+
+1. **`lib/echo/skill.md`** — EchoMe's entire personality is this one file, and
+   it's still the scaffolding placeholder. Nothing about tone or boundaries
+   should be edited anywhere else.
+2. **`lib/echo/schema.ts`** — the EchoCompass/EchoMap field shapes are a
+   reasonable guess, not the client's authoritative spec. Everything
+   downstream (distiller, closing ritual, xTiles writes) reads this one file.
+3. **`lib/config/crisis.ts`** — `RESOURCES` is deliberately empty. Until it's
+   filled in with a verified, per-region list, the interface shows a generic
+   fallback rather than inventing hotline numbers.
+4. **`lib/config/pricing.ts`** — both tiers still show `$—` as `displayPrice`.
+   Stripe charges whatever `STRIPE_PRICE_ACCESS`/`STRIPE_PRICE_FOUNDERS` point
+   to regardless, so a stale label here is a wrong *display*, not a wrong
+   charge — but it still needs fixing before anyone sees a price.
+5. **`lib/echo/messages.ts`** — every user-facing string (disclaimer, refusal
+   wording, error copy) is marked "PLACEHOLDER WORDING. Client to confirm."
+
+### Engineering work, not client-blocked
+
+6. **`lib/xtiles/http.ts`** — the real xTiles transport throws
+   `NOT_IMPLEMENTED` on every write. The adapter interface, the local fake,
+   encrypted token storage, and the OAuth connect/callback routes are all
+   finished around it — it needs four specifics from xTiles' own API docs
+   (OAuth authorise/token URLs, the view write endpoint's payload shape,
+   whether it honours an idempotency key, and refresh-token semantics). See
+   the file's header for the full list.
+7. **Google and Facebook sign-in** — both are fully wired
+   (`signInWithProvider`, the `/auth/callback` route) but stay rendered as
+   disabled "Soon" buttons until real OAuth credentials are entered in the
+   Supabase dashboard and `enabled: true` is flipped in
+   `lib/auth/providers.ts`. Setup steps for both are in `README.md`.
+8. **This environment's own Supabase project** — separate from the four items
+   above, *this specific deployment* is mid-setup: the publishable and secret
+   keys are in `.env.local`, but it's still missing the project URL, both
+   migrations (`0001_init.sql`, `0002_phases_2_to_4.sql`) run against it, and
+   the Auth redirect URLs configured. `ECHOME_LOCAL_MODE` stays on until all
+   three are done.
+
+### Before calling any of it launched
+
+9. Re-run Phase 4's own checklist for real, against a real Supabase project
+   rather than local mode: `npm run doctor` clean, `npm test` (the erasure
+   audit) passing, and RLS re-verified table by table under the anon key —
+   local mode never touches Postgres, so none of this has been proven against
+   the real database yet.

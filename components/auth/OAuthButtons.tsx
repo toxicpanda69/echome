@@ -44,7 +44,7 @@ function ProviderButton({ provider }: { provider: OAuthProvider }) {
     <button
       type="submit"
       disabled={pending}
-      className="flex w-full items-center justify-center gap-3 rounded-full border border-line bg-raised px-4 py-2.5 text-base font-medium transition hover:border-accent disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-3 rounded-full border border-line bg-page px-5 py-3 text-base font-medium transition hover:border-accent disabled:opacity-50"
     >
       <ProviderMark provider={provider} />
       <span>{pending ? "One moment…" : `Continue with ${label}`}</span>
@@ -62,7 +62,7 @@ function TempProviderButton({ provider }: { provider: OAuthProvider }) {
       disabled
       aria-disabled="true"
       title={`${label} sign-in isn't connected yet`}
-      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-dashed border-line bg-raised px-4 py-2.5 text-sm font-medium text-ink-soft opacity-60 sm:text-base"
+      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-dashed border-line bg-page px-5 py-3 text-sm font-medium text-ink-soft opacity-60 sm:text-base"
     >
       <ProviderMark provider={provider} />
       <span className="whitespace-nowrap">Continue with {label}</span>

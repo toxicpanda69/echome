@@ -4,15 +4,20 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 /**
- * The avatar in the header. Click it and a small menu drops down with who's
- * signed in and where the rest of the account lives — replaces what used to
- * be a bare "Sign out" button floating on its own.
+ * The avatar in the header. Click it and a frosted glass panel drops down —
+ * identity up top, then the places the rest of the account lives, styled
+ * after a client reference (a translucent, blurred options panel with
+ * icon rows). Kept in EchoMe's own violet rather than the reference's blue.
  */
 export function ProfileMenu({
   email,
+  planLabel,
+  xtilesConnected,
   signOutAction,
 }: {
   email: string | null;
+  planLabel: string;
+  xtilesConnected: boolean;
   signOutAction: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -56,33 +61,62 @@ export function ProfileMenu({
       {open ? (
         <div
           role="menu"
-          className="echo-rise absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-line bg-raised py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_18px_40px_-20px_rgba(0,0,0,0.35)]"
+          className="echo-rise absolute right-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-line backdrop-blur-2xl"
+          style={{
+            background: "color-mix(in oklch, var(--color-raised) 68%, transparent)",
+            boxShadow:
+              "inset 0 1px 0 color-mix(in oklch, var(--color-on-accent) 12%, transparent), " +
+              "0 1px 2px rgba(0,0,0,0.04), 0 24px 48px -20px rgba(0,0,0,0.45)",
+          }}
         >
-          <div className="border-b border-line px-4 py-3">
-            <p className="truncate text-sm font-medium">{email ?? "Signed in"}</p>
+          <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-base font-medium text-on-accent">
+              {initial}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-medium">{email ?? "Signed in"}</span>
+                <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                  {planLabel}
+                </span>
+              </span>
+            </span>
           </div>
 
-          <MenuLink href="/account" onNavigate={() => setOpen(false)}>
-            Account
-          </MenuLink>
-          <MenuLink href="/settings" onNavigate={() => setOpen(false)}>
-            Settings
-          </MenuLink>
-          <MenuLink href="/policy" onNavigate={() => setOpen(false)}>
-            Privacy policy
-          </MenuLink>
+          <div className="flex flex-col gap-0.5 p-1.5">
+            <MenuLink href="/account" onNavigate={() => setOpen(false)} icon={<TilesIcon />}>
+              <span className="flex flex-1 items-center justify-between">
+                xTiles integration
+                <StatusDot connected={xtilesConnected} />
+              </span>
+            </MenuLink>
+            <MenuLink href="/account" onNavigate={() => setOpen(false)} icon={<UserIcon />}>
+              Account
+            </MenuLink>
+            <MenuLink href="/settings" onNavigate={() => setOpen(false)} icon={<GearIcon />}>
+              Settings
+            </MenuLink>
+            <MenuLink href="/policy" onNavigate={() => setOpen(false)} icon={<ShieldIcon />}>
+              Privacy policy
+            </MenuLink>
+          </div>
 
-          <div className="my-1.5 border-t border-line" />
+          <div className="mx-1.5 border-t border-line" />
 
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              role="menuitem"
-              className="block w-full px-4 py-2 text-left text-sm text-ink-soft transition hover:bg-page hover:text-ink"
-            >
-              Sign out
-            </button>
-          </form>
+          <div className="p-1.5">
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                role="menuitem"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-ink-soft transition hover:bg-accent-soft hover:text-ink"
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-page text-ink-soft">
+                  <LogoutIcon />
+                </span>
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       ) : null}
     </div>
@@ -92,10 +126,12 @@ export function ProfileMenu({
 function MenuLink({
   href,
   onNavigate,
+  icon,
   children,
 }: {
   href: string;
   onNavigate: () => void;
+  icon: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -103,9 +139,84 @@ function MenuLink({
       href={href}
       role="menuitem"
       onClick={onNavigate}
-      className="block px-4 py-2 text-sm text-ink-soft transition hover:bg-page hover:text-ink"
+      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink-soft transition hover:bg-accent-soft hover:text-ink"
     >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-page text-ink-soft">
+        {icon}
+      </span>
       {children}
     </Link>
+  );
+}
+
+function StatusDot({ connected }: { connected: boolean }) {
+  return (
+    <span className="flex items-center gap-1.5 text-xs">
+      <span
+        aria-hidden="true"
+        className={`size-1.5 rounded-full ${connected ? "bg-success" : "bg-ink-soft"}`}
+      />
+      <span className={connected ? "text-success" : "text-ink-soft"}>
+        {connected ? "Connected" : "Not connected"}
+      </span>
+    </span>
+  );
+}
+
+const ICON_PROPS = {
+  viewBox: "0 0 24 24",
+  width: 18,
+  height: 18,
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function TilesIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+    </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
   );
 }

@@ -13,6 +13,9 @@ import { resumeOrStartSession } from "@/lib/echo/sessions";
 import { classifyError } from "@/lib/echo/telemetry";
 import { toDisplayTurns, type DisplayTurn } from "@/lib/echo/transcript";
 import { currentUser } from "@/lib/auth/current-user";
+import { entitlementFor } from "@/lib/billing/entitlements";
+import { TIERS } from "@/lib/config/pricing";
+import { xtiles } from "@/lib/xtiles/factory";
 
 /**
  * Resuming happens here, and it is the whole product in one function: the
@@ -38,11 +41,22 @@ export default async function ChatPage() {
     throw error;
   }
 
+  const [entitlement, xtilesConnected] = await Promise.all([
+    entitlementFor(user.id),
+    (await xtiles()).isConnected(user.id).catch(() => false),
+  ]);
+  const planLabel = entitlement.tier === "none" ? "Free" : TIERS[entitlement.tier].name;
+
   return (
     <>
       <BrandHeader
         trailing={
-          <ProfileMenu email={user.email} signOutAction={LOCAL_MODE ? localSignOut : signOut} />
+          <ProfileMenu
+            email={user.email}
+            planLabel={planLabel}
+            xtilesConnected={xtilesConnected}
+            signOutAction={LOCAL_MODE ? localSignOut : signOut}
+          />
         }
       />
       <Conversation initialTurns={turns} />
