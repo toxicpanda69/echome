@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Without this, Netlify uploads .next as static files and creates no functions,
+# so every route 404s. The plugin turns the Next.js server side into functions.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
