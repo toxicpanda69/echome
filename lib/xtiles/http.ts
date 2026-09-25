@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Distillation } from "@/lib/echo/schema";
+import type { MapPage } from "@/lib/echo/schema";
 import { readTokens } from "@/lib/xtiles/tokens";
 import {
   XTilesNotConnectedError,
@@ -57,7 +57,7 @@ export class XTilesHttpAdapter implements XTilesAdapter {
     throw new Error(NOT_IMPLEMENTED);
   }
 
-  async readExisting(userId: string): Promise<Distillation> {
+  async readExisting(userId: string): Promise<readonly MapPage[]> {
     if (!(await this.isConnected(userId))) throw new XTilesNotConnectedError();
     throw new Error(NOT_IMPLEMENTED);
   }

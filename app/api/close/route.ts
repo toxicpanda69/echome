@@ -18,7 +18,7 @@ import { xtiles } from "@/lib/xtiles/factory";
  * The closing ritual's endpoint.
  *
  *   propose  distil the conversation and show what was drawn out
- *   commit   write the kept entries to xTiles, then destroy the session
+ *   commit   write the kept fields as one dated EchoMap entry, then destroy the session
  *   abandon  put the conversation back
  *
  * Note what commit accepts: the distillation is sent back from the client along
@@ -33,7 +33,13 @@ export async function POST(request: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: NOT_SIGNED_IN }, { status: 401 });
 
-  let body: { action?: unknown; keptIds?: unknown; distillation?: unknown; sessionId?: unknown };
+  let body: {
+    action?: unknown;
+    keptIds?: unknown;
+    distillation?: unknown;
+    sessionId?: unknown;
+    timeZone?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -74,6 +80,7 @@ export async function POST(request: NextRequest) {
         body.sessionId,
         keptIds,
         distillation,
+        { timeZone: typeof body.timeZone === "string" ? body.timeZone : undefined },
       );
       return NextResponse.json({ ok: true, ...result });
     }

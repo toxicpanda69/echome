@@ -5,7 +5,13 @@ import { randomUUID } from "node:crypto";
 import { distill, DistillationFailedError } from "@/lib/echo/distill";
 import { LOCAL_MODE } from "@/lib/local/mode";
 import { createReceipt, markFailed, markWritten } from "@/lib/echo/receipts";
-import { countEntries, keepOnly, type Distillation } from "@/lib/echo/schema";
+import {
+  buildMapPage,
+  countFields,
+  formatEntryDate,
+  keepOnly,
+  type Distillation,
+} from "@/lib/echo/schema";
 import { destroySession, readTranscript } from "@/lib/echo/sessions";
 import { classifyError, recordTurn } from "@/lib/echo/telemetry";
 import type { SessionStore } from "@/lib/echo/store";
@@ -119,6 +125,8 @@ export async function commitClosing(
   sessionId: string,
   keptIds: readonly string[],
   distillation: Distillation,
+  /** `timeZone` is the person's own, so the entry is dated on THEIR day. */
+  options: { timeZone?: string; now?: Date } = {},
 ): Promise<{ ref: string | null; kept: number }> {
   const row = await store.find(sessionId, userId);
   if (!row) {
@@ -126,7 +134,7 @@ export async function commitClosing(
   }
 
   const kept = keepOnly(distillation, keptIds);
-  const keptCount = countEntries(kept);
+  const keptCount = countFields(kept);
   const receiptId = randomUUID();
 
   // Written before the destruction, so that if everything after this crashes
@@ -135,14 +143,17 @@ export async function commitClosing(
     id: receiptId,
     userId,
     sessionId,
-    compassItems: distillation.compass.length,
-    mapItems: distillation.map.length,
+    // Always 0: the Compass is the person's own to write (skill v3.11, Section 7).
+    // The column stays so the database needs no migration; mapItems counts the
+    // fields drawn out of the conversation.
+    compassItems: 0,
+    mapItems: countFields(distillation),
     keptItems: keptCount,
   });
 
   let ref: string | null = null;
 
-  if (keptCount > 0) {
+  if (kept.entry) {
     if (!(await xtiles.isConnected(userId))) {
       await markFailed(receiptId, "XTilesNotConnectedError");
       throw new RitualError(
@@ -154,8 +165,12 @@ export async function commitClosing(
     }
 
     try {
+      const page = buildMapPage(
+        kept.entry,
+        formatEntryDate(options.now ?? new Date(), options.timeZone),
+      );
       // The receipt id doubles as the idempotency key: a retry writes once.
-      ref = (await xtiles.write(userId, kept, receiptId)).ref;
+      ref = (await xtiles.write(userId, page, receiptId)).ref;
     } catch (error) {
       const retryable = error instanceof XTilesWriteError ? error.retryable : true;
       await markFailed(receiptId, classifyError(error));

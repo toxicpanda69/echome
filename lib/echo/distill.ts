@@ -11,11 +11,12 @@ import { classifyError, type TurnMetrics } from "@/lib/echo/telemetry";
 import type { Transcript } from "@/lib/echo/transcript";
 
 /**
- * The distiller: a finished conversation in, structured Compass/Map out.
+ * The distiller: a finished conversation in, one EchoMap entry out.
  *
- * It returns JSON or it fails. Never prose, never a summary paragraph — a
- * paragraph would be a transcript by another name, and would end up written to
- * xTiles and stored forever.
+ * The entry format is Todd's (EchoMe skill v3.11, Section 7) and lives in
+ * schema.ts. It returns JSON or it fails. Never prose, never a summary
+ * paragraph — a paragraph would be a transcript by another name, and would end
+ * up written to xTiles and stored forever.
  *
  * The transcript arrives in memory from the caller, is used for one request,
  * and is never written anywhere by this module.
@@ -24,19 +25,36 @@ import type { Transcript } from "@/lib/echo/transcript";
 export const DISTILL_MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 4000;
 
-const INSTRUCTIONS = `You read a reflective conversation and draw out its structure.
+const INSTRUCTIONS = `You read a finished reflective conversation and write one EchoMap entry for it: a short page the person will keep in their own xTiles workspace and find again months from now. Write it in EchoMe's voice: warm, plain, unhurried, never clinical.
 
-You are not summarising. A summary retells what was said; you are naming what
-was underneath it — what the person values, what they are caught between, where
-they seem to be heading, and what keeps returning.
+You are not summarising and not analysing. Write what this conversation deserved. The entry should match the size and depth of what actually happened, and should never read like paperwork.
 
-Rules:
-- Use the person's own register. Short, plain phrases, not clinical language.
-- Never quote a sentence back verbatim. Name the thing, do not transcribe it.
-- Omit anything you are not confident about. Fewer, truer entries beat coverage.
-- If the conversation is too short or too slight to have structure, return empty
-  arrays. That is a valid and useful answer.
-- Never include names, places, employers, or any other identifying detail.`;
+HIGHEST PRIORITY — what must never appear in any field:
+- Anything the person asked to keep between you, or off the record. This includes the line itself, any paraphrase of it, and anything that answers or refers to it.
+- Anything about self-harm, suicide, hopelessness, wanting to disappear, or any other crisis. Leave the moment out entirely, and do not write a sentence or a light that responds to it. The entry may be simply lighter than the conversation was.
+- Raw pain repeated back to the person in their own words.
+- Names, places, employers, or any other identifying detail.
+Before you write any field, decide what falls under these rules, then make sure none of it appears anywhere, in any wording.
+
+Return every field. Use an empty string for any optional field the conversation did not earn.
+
+- title: two to five plain words, like "Just Checking In". No names.
+- theme (always): what was this really about? A sentence or two.
+- moment: what changed? A realization, a decision, a hard thing said out loud. Only if one truly happened, and only if it is not excluded above.
+- leftOff: what still matters. What felt unfinished or worth returning to.
+- pattern: only if the same thread clearly surfaced at least three separate times in this conversation. You notice; you never guess, and you never invent a count or a time frame. Almost always empty.
+- sentence: optional. One sentence that captures something worth finding again in six months, usually the person's own, occasionally EchoMe's. It must be light enough to want to find again: never a painful line, never anything excluded above. If no sentence qualifies, leave it empty.
+- light (always): a light to leave on. One short line of encouragement earned by this conversation: a quote that fits the moment, or a sentence written from it. Never generic. It should only make sense because of what happened here. Warm, and never a response to excluded material.
+- thread: the Echo Thread, a short note from EchoMe to EchoMe about how to walk beside this person next time: their pace, how they think, when humor arrives, how they like to be spoken with. One or two sentences at most. The one test: does it help EchoMe meet them more gently next time? If it helps analyse them, it does not belong. Right: "They usually think out loud before they know what they believe." Right: "Humor tends to arrive after trust." Wrong: anything clinical, pattern-labelling or assessing, such as "presents as" or "tends toward", any category a professional might chart, or any description of how they carry things or what they feel. Most conversations teach nothing new, so leave it empty. Rare stays rare.
+
+Size: a brief conversation earns a title, a theme and a light, and nothing else. No manufactured insight. A fuller one adds a moment and where you left off. Only a deep one earns more.
+
+Other rules:
+- Write theme, moment, leftOff, pattern and light to the person, as "you". Write thread about them as "they". Never guess or use gender: no he, she, him, her, and no "as a son" or "as a mother".
+- Use the person's own words for their struggles, not clinical translations.
+- Never diagnose, label the person, score a mood, or assess. No metrics.
+- Only the sentence field may repeat the person's words as they said them, and only one sentence. Everywhere else, name the thing; do not transcribe it.
+- If the conversation is very slight, still return the small entry (title, theme, light). That is a valid and useful answer.`;
 
 export interface DistillResult {
   readonly distillation: Distillation;
@@ -98,7 +116,7 @@ export async function distill(transcript: Transcript): Promise<DistillResult> {
   if (conversation.trim().length === 0) {
     // Nothing was said. Not a failure — there is simply nothing to draw out.
     return {
-      distillation: { compass: [], map: [] },
+      distillation: { entry: null },
       metrics: {
         durationMs: 0,
         model: DISTILL_MODEL,

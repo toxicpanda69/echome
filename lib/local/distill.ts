@@ -2,7 +2,7 @@ import "server-only";
 
 import { assertLocalMode } from "@/lib/local/mode";
 import type { DistillResult } from "@/lib/echo/distill";
-import { COMPASS_FACETS, MAP_KINDS, type Distillation } from "@/lib/echo/schema";
+import type { Distillation } from "@/lib/echo/schema";
 import type { Transcript } from "@/lib/echo/transcript";
 
 /**
@@ -36,38 +36,45 @@ function theirWords(transcript: Transcript): string[] {
 }
 
 /**
- * A label that reflects the SIZE and SHAPE of what was said, never its content.
+ * A description of the SIZE and SHAPE of what was said, never its content.
  *
  * The first version of this echoed their opening words, and the erasure audit
  * caught it: a kept entry carried a verbatim fragment of the conversation into
- * the xTiles workspace. The real distiller is instructed never to transcribe,
- * so the stub must not either — otherwise it models the wrong behaviour and
- * makes the audit useless.
+ * the xTiles workspace. The real distiller is instructed never to transcribe
+ * (apart from one optional sentence), so the stub must not either — otherwise
+ * it models the wrong behaviour and makes the audit useless.
  */
-function shapeOf(text: string, index: number): string {
-  const words = text.trim().split(/\s+/).length;
-  const size = words < 12 ? "A short thing" : words < 40 ? "Something" : "A long thing";
-  return `${size} they said (turn ${index + 1}, ${words} words)`;
+function shapeOf(said: string[]): string {
+  const turns = said.length;
+  const words = said.reduce((total, text) => total + text.trim().split(/\s+/).length, 0);
+  return `${turns} ${turns === 1 ? "message" : "messages"}, ${words} words`;
 }
+
+const STUB_NOTE =
+  "Placeholder from the local stub. No analysis was performed, and nothing they wrote is reproduced here.";
 
 export async function distillLocally(transcript: Transcript): Promise<DistillResult> {
   assertLocalMode();
 
   const said = theirWords(transcript);
+  const fuller = said.length >= 2;
 
+  // The shape of a real entry: a brief conversation earns a Theme and a Light,
+  // a fuller one adds a Moment and Where we left off. Same rule as the skill.
   const distillation: Distillation = {
-    compass: said.slice(0, 3).map((text, index) => ({
-      facet: COMPASS_FACETS[index % COMPASS_FACETS.length]!,
-      label: shapeOf(text, index),
-      note: "Placeholder from the local stub. No analysis was performed, and " +
-        "nothing they wrote is reproduced here.",
-    })),
-    map: said.slice(0, 2).map((text, index) => ({
-      kind: MAP_KINDS[index % MAP_KINDS.length]!,
-      label: shapeOf(text, index),
-      note: "Placeholder from the local stub. No analysis was performed, and " +
-        "nothing they wrote is reproduced here.",
-    })),
+    entry:
+      said.length === 0
+        ? null
+        : {
+            title: "Local Stub Entry",
+            theme: `${shapeOf(said)}. ${STUB_NOTE}`,
+            moment: fuller ? `A placeholder moment. ${STUB_NOTE}` : "",
+            leftOff: fuller ? `A placeholder for what felt unfinished. ${STUB_NOTE}` : "",
+            pattern: "",
+            sentence: "",
+            light: "A placeholder light to leave on. The real one is written from what was said.",
+            thread: "",
+          },
   };
 
   return {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { EchoLoader } from "@/components/EchoLoader";
 import { EchoMark } from "@/components/EchoMark";
-import { entryId, type Distillation } from "@/lib/echo/schema";
+import { fieldId, filledFields, formatEntryDate, type Distillation } from "@/lib/echo/schema";
 
 /**
  * The closing ritual.
@@ -85,6 +85,8 @@ export function ClosingRitual() {
         sessionId: proposal.sessionId,
         distillation: proposal.distillation,
         keptIds: [...kept],
+        // So the entry is dated on the person's own day, not the server's.
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       setStage("done");
     } catch (error) {
@@ -129,8 +131,9 @@ export function ClosingRitual() {
   }
 
   if (stage === "choosing" && proposal) {
-    const { compass, map } = proposal.distillation;
-    const nothing = compass.length === 0 && map.length === 0;
+    const entry = proposal.distillation.entry;
+    const fields = filledFields(proposal.distillation);
+    const nothing = !entry || fields.length === 0;
 
     return (
       <Shell title="What would you like to keep?">
@@ -141,45 +144,38 @@ export function ClosingRitual() {
           </p>
         ) : (
           <p className="text-ink-soft">
-            Tick what you want kept. Anything you leave unticked is destroyed with the rest.
+            This is the page I&rsquo;d add to your EchoMap. Tick what you want kept. Anything you
+            leave unticked is destroyed with the rest.
           </p>
         )}
 
-        {compass.length > 0 ? (
-          <Group title="EchoCompass" subtitle="Where you seem to be oriented right now">
-            {compass.map((entry, index) => (
+        {entry && fields.length > 0 ? (
+          <Group
+            title={`${formatEntryDate(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone)} — ${entry.title}`}
+            subtitle="Your EchoMap entry for this conversation"
+          >
+            {fields.map((field) => (
               <Choice
-                key={entryId("compass", index)}
-                id={entryId("compass", index)}
-                kind={entry.facet}
-                label={entry.label}
-                note={entry.note}
-                checked={kept.has(entryId("compass", index))}
+                key={field.key}
+                id={fieldId(field.key)}
+                kind={field.label}
+                text={field.text}
+                checked={kept.has(fieldId(field.key))}
                 onToggle={toggle}
               />
             ))}
-          </Group>
-        ) : null}
-
-        {map.length > 0 ? (
-          <Group title="EchoMap" subtitle="What keeps returning">
-            {map.map((entry, index) => (
-              <Choice
-                key={entryId("map", index)}
-                id={entryId("map", index)}
-                kind={entry.kind}
-                label={entry.label}
-                note={entry.note}
-                checked={kept.has(entryId("map", index))}
-                onToggle={toggle}
-              />
-            ))}
+            <p className="px-1 text-xs leading-relaxed text-ink-soft">
+              The date, the title, and a space marked &ldquo;My Reflection&rdquo; come with whatever
+              you keep. That space is yours to write in later; I never do.
+            </p>
           </Group>
         ) : null}
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Primary onClick={commit}>
-            {kept.size === 0 ? "End without keeping anything" : `Keep ${kept.size} and end`}
+            {kept.size === 0
+              ? "End without keeping anything"
+              : `Keep ${kept.size} ${kept.size === 1 ? "part" : "parts"} and end`}
           </Primary>
           <Secondary href="/chat" onNavigate={() => post({ action: "abandon" })}>
             Go back
@@ -257,15 +253,13 @@ function Group({
 function Choice({
   id,
   kind,
-  label,
-  note,
+  text,
   checked,
   onToggle,
 }: {
   id: string;
   kind: string;
-  label: string;
-  note: string;
+  text: string;
   checked: boolean;
   onToggle: (id: string) => void;
 }) {
@@ -283,8 +277,7 @@ function Choice({
       />
       <span className="flex flex-col gap-0.5">
         <span className="text-xs uppercase tracking-wide text-ink-soft">{kind}</span>
-        <span className="text-base leading-snug">{label}</span>
-        <span className="text-sm leading-relaxed text-ink-soft">{note}</span>
+        <span className="text-base leading-snug">{text}</span>
       </span>
     </label>
   );

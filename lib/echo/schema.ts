@@ -1,20 +1,30 @@
 /**
- * EchoCompass and EchoMap.
+ * The EchoMap entry.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- *  PLACEHOLDER SHAPES. THE CLIENT'S BUILD SPEC IS AUTHORITATIVE.
+ *  Source: Todd Savard's EchoMe skill v3.11, Section 7 ("At session close — the
+ *  EchoMap log"). That document is authoritative; this file is the one place
+ *  its entry format lives, as typed definitions used for the distiller's
+ *  structured-output format, for validation, for the closing ritual's choices,
+ *  and for rendering the page written to xTiles. Changing the spec means
+ *  editing this file.
  *
- *  From the build brief: "The EchoCompass and EchoMap schemas in them are
- *  authoritative — put them in one module, lib/echo/schema.ts, as typed schemas
- *  used both for validation and as the Claude structured-output format, so that
- *  changing the spec means editing one file."
+ *  What the skill says, and what follows from it:
  *
- *  This is that one file. Everything downstream — the distiller, the closing
- *  ritual, the xTiles adapter, the tests — reads these definitions and nothing
- *  else. When Todd's spec arrives, edit below and the rest follows.
- *
- *  The field names here are a reasonable guess at the shape, chosen so the
- *  pipeline can be built and tested end to end. Do not treat them as final.
+ *  - The EchoMap is the trail: ONE dated entry per session. Its fields, each
+ *    answering a human question: Theme, Moment that mattered, Where we left
+ *    off, Pattern noticed, A sentence worth keeping, A light to leave on
+ *    (always last of those), then the fixed "My Reflection" placeholder, then an
+ *    optional Echo Thread.
+ *  - The entry scales with the session: a brief one earns a Theme and a Light,
+ *    nothing more. So only Theme and Light are required; the rest may be empty.
+ *  - The EchoCompass is "read always, written never" by EchoMe: it is the
+ *    person's own introduction, in their own words. This app therefore never
+ *    distils or writes a Compass. There is no Compass type here on purpose.
+ *  - Every entry is headed "### Month Day, Year — Short Title". The date is the
+ *    session's real date, supplied by the app — never the model's guess.
+ *  - "My Reflection" is theirs alone. The app writes the placeholder line and
+ *    never any text in it.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -33,70 +43,126 @@ export interface JsonSchema {
 }
 
 // ---------------------------------------------------------------------------
-// EchoCompass — where a person is oriented right now.
+// The fields, in the order they appear on the page.
 // ---------------------------------------------------------------------------
 
-export const COMPASS_FACETS = ["value", "tension", "direction", "question"] as const;
-export type CompassFacet = (typeof COMPASS_FACETS)[number];
-
-export interface CompassEntry {
-  readonly facet: CompassFacet;
-  /** A short phrase in the person's own register, not a clinical summary. */
-  readonly label: string;
-  /** One or two sentences of context. */
-  readonly note: string;
-}
-
-// ---------------------------------------------------------------------------
-// EchoMap — what recurs across a person's thinking.
-// ---------------------------------------------------------------------------
-
-export const MAP_KINDS = ["pattern", "theme", "relationship", "turning-point"] as const;
-export type MapKind = (typeof MAP_KINDS)[number];
-
-export interface MapEntry {
-  readonly kind: MapKind;
-  readonly label: string;
-  readonly note: string;
-}
-
-export interface Distillation {
-  readonly compass: CompassEntry[];
-  readonly map: MapEntry[];
-}
-
-// ---------------------------------------------------------------------------
-// The same shapes, as the structured-output format Claude is given.
-// ---------------------------------------------------------------------------
-
-const entrySchema = (kinds: readonly string[], kindField: string, kindNote: string): JsonSchema => ({
-  type: "object",
-  properties: {
-    [kindField]: { type: "string", enum: kinds, description: kindNote },
-    label: { type: "string", description: "A short phrase in the person's own words." },
-    note: { type: "string", description: "One or two sentences of context." },
+export const ENTRY_FIELDS = [
+  {
+    key: "theme",
+    label: "Theme",
+    required: true,
+    guide: "What was this really about? A sentence or two.",
   },
-  required: [kindField, "label", "note"],
-  additionalProperties: false,
-});
+  {
+    key: "moment",
+    label: "Moment that mattered",
+    required: false,
+    guide:
+      "What changed? A realization, a decision, a hard thing said out loud. Only if one truly happened.",
+  },
+  {
+    key: "leftOff",
+    label: "Where we left off",
+    required: false,
+    guide: "What still matters — what felt unfinished or worth returning to.",
+  },
+  {
+    key: "pattern",
+    label: "Pattern noticed",
+    required: false,
+    guide:
+      "Only if the same thread surfaced at least three separate times in this conversation. " +
+      "Notice, never guess. Almost always empty.",
+  },
+  {
+    key: "sentence",
+    label: "A sentence worth keeping",
+    required: false,
+    guide:
+      "One sentence, usually the person's own, that captures something worth finding again in " +
+      "six months. Optional.",
+  },
+  {
+    key: "light",
+    label: "A light to leave on",
+    required: true,
+    guide:
+      "One short line of encouragement earned by this conversation: a quote that fits the moment, " +
+      "or a sentence written from it. Never generic — it should only make sense because of what " +
+      "happened here. Warm.",
+  },
+  {
+    key: "thread",
+    label: "Echo Thread",
+    required: false,
+    guide:
+      "A note from EchoMe to EchoMe about how to walk beside this person next time. " +
+      "Accompaniment, never analysis. Rare — most sessions leave it empty.",
+  },
+] as const;
+
+export type EntryFieldKey = (typeof ENTRY_FIELDS)[number]["key"];
+
+/** Written by the app, on every entry, exactly. The person fills it in, never EchoMe. */
+export const MY_REFLECTION = "**My Reflection:** *(yours to write, whenever you want)*";
+
+/**
+ * One EchoMap entry. Every field is a plain string; an empty string means the
+ * session did not earn it. (An empty string rather than null keeps the
+ * structured-output schema simple and lets every field share one shape.)
+ */
+export type MapEntry = { readonly title: string } & { readonly [K in EntryFieldKey]: string };
+
+/**
+ * What the distiller returns. `entry` is null only when there was nothing to
+ * distil at all — no message was ever sent — or after the person has chosen to
+ * keep none of it.
+ */
+export interface Distillation {
+  readonly entry: MapEntry | null;
+}
+
+/** A finished page, ready for xTiles. */
+export interface MapPage {
+  /** "Month Day, Year — Short Title", without the markdown marker. */
+  readonly heading: string;
+  /** The whole entry as markdown, heading line included. */
+  readonly markdown: string;
+}
+
+// ---------------------------------------------------------------------------
+// The same shape, as the structured-output format Claude is given.
+// ---------------------------------------------------------------------------
 
 export const DISTILLATION_SCHEMA: JsonSchema = {
   type: "object",
   properties: {
-    compass: {
-      type: "array",
-      maxItems: 8,
-      items: entrySchema(COMPASS_FACETS, "facet", "Which compass facet this belongs to."),
-      description: "Where this person is oriented right now.",
-    },
-    map: {
-      type: "array",
-      maxItems: 8,
-      items: entrySchema(MAP_KINDS, "kind", "Which kind of map entry this is."),
-      description: "What recurs in this person's thinking.",
+    entry: {
+      type: "object",
+      description: "The one EchoMap entry for this conversation.",
+      properties: {
+        title: {
+          type: "string",
+          description:
+            "A short, plain title of two to five words, e.g. 'Just Checking In'. No names, no date.",
+        },
+        ...Object.fromEntries(
+          ENTRY_FIELDS.map((field) => [
+            field.key,
+            {
+              type: "string",
+              description: field.required
+                ? field.guide
+                : `${field.guide} Use an empty string if this conversation did not earn it.`,
+            },
+          ]),
+        ),
+      },
+      required: ["title", ...ENTRY_FIELDS.map((field) => field.key)],
+      additionalProperties: false,
     },
   },
-  required: ["compass", "map"],
+  required: ["entry"],
   additionalProperties: false,
 };
 
@@ -108,20 +174,9 @@ export class DistillationShapeError extends Error {
   override readonly name = "DistillationShapeError";
 }
 
-function validEntry<K extends string>(
-  value: unknown,
-  kindField: string,
-  kinds: readonly K[],
-): boolean {
-  if (typeof value !== "object" || value === null) return false;
-  const entry = value as Record<string, unknown>;
-  return (
-    typeof entry[kindField] === "string" &&
-    (kinds as readonly string[]).includes(entry[kindField] as string) &&
-    typeof entry.label === "string" &&
-    entry.label.trim().length > 0 &&
-    typeof entry.note === "string"
-  );
+/** One line of text. A stray newline or heading marker must not restructure the page. */
+function tidy(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -132,45 +187,118 @@ export function parseDistillation(value: unknown): Distillation {
   if (typeof value !== "object" || value === null) {
     throw new DistillationShapeError("Distillation is not an object.");
   }
-  const candidate = value as { compass?: unknown; map?: unknown };
-
-  if (!Array.isArray(candidate.compass)) {
-    throw new DistillationShapeError("Distillation has no compass array.");
-  }
-  if (!Array.isArray(candidate.map)) {
-    throw new DistillationShapeError("Distillation has no map array.");
+  const candidate = (value as { entry?: unknown }).entry;
+  if (candidate === null) return { entry: null };
+  if (typeof candidate !== "object" || candidate === undefined) {
+    throw new DistillationShapeError("Distillation has no entry.");
   }
 
-  const badCompass = candidate.compass.findIndex((e) => !validEntry(e, "facet", COMPASS_FACETS));
-  if (badCompass !== -1) {
-    throw new DistillationShapeError(`Compass entry ${badCompass} has the wrong shape.`);
+  const raw = candidate as Record<string, unknown>;
+
+  if (typeof raw.title !== "string" || tidy(raw.title).length === 0) {
+    throw new DistillationShapeError("Entry has no title.");
   }
 
-  const badMap = candidate.map.findIndex((e) => !validEntry(e, "kind", MAP_KINDS));
-  if (badMap !== -1) {
-    throw new DistillationShapeError(`Map entry ${badMap} has the wrong shape.`);
+  const entry: Record<string, string> = { title: tidy(raw.title) };
+  for (const field of ENTRY_FIELDS) {
+    const text = raw[field.key];
+    if (typeof text !== "string") {
+      throw new DistillationShapeError(`Entry field ${field.key} is missing.`);
+    }
+    const cleaned = tidy(text);
+    if (field.required && cleaned.length === 0) {
+      throw new DistillationShapeError(`Entry field ${field.key} is required.`);
+    }
+    entry[field.key] = cleaned;
   }
 
-  return {
-    compass: candidate.compass as CompassEntry[],
-    map: candidate.map as MapEntry[],
-  };
+  return { entry: entry as MapEntry };
 }
+
+// ---------------------------------------------------------------------------
+// The closing ritual's choices: the person keeps or drops each field.
+// ---------------------------------------------------------------------------
 
 /** Stable ids for the closing ritual's keep/discard choices. */
-export function entryId(kind: "compass" | "map", index: number): string {
-  return `${kind}-${index}`;
+export function fieldId(key: EntryFieldKey): string {
+  return `entry-${key}`;
 }
 
-/** Narrow a distillation to the entries the person chose to keep. */
+/** The fields that actually have something in them, in page order. */
+export function filledFields(
+  distillation: Distillation,
+): { key: EntryFieldKey; label: string; text: string }[] {
+  const entry = distillation.entry;
+  if (!entry) return [];
+  return ENTRY_FIELDS.filter((field) => entry[field.key].length > 0).map((field) => ({
+    key: field.key,
+    label: field.label,
+    text: entry[field.key],
+  }));
+}
+
+/**
+ * Narrow a distillation to the fields the person chose to keep. The date and
+ * title always come with any kept field; choosing no fields means no entry.
+ */
 export function keepOnly(distillation: Distillation, keptIds: readonly string[]): Distillation {
+  const entry = distillation.entry;
+  if (!entry) return { entry: null };
+
   const kept = new Set(keptIds);
-  return {
-    compass: distillation.compass.filter((_, i) => kept.has(entryId("compass", i))),
-    map: distillation.map.filter((_, i) => kept.has(entryId("map", i))),
-  };
+  const narrowed: Record<string, string> = { title: entry.title };
+  let any = false;
+  for (const field of ENTRY_FIELDS) {
+    const keep = kept.has(fieldId(field.key)) && entry[field.key].length > 0;
+    narrowed[field.key] = keep ? entry[field.key] : "";
+    any ||= keep;
+  }
+  return { entry: any ? (narrowed as MapEntry) : null };
 }
 
-export function countEntries(distillation: Distillation): number {
-  return distillation.compass.length + distillation.map.length;
+/** How many fields have content. Used for receipts and the keep button. */
+export function countFields(distillation: Distillation): number {
+  return filledFields(distillation).length;
+}
+
+// ---------------------------------------------------------------------------
+// The page.
+// ---------------------------------------------------------------------------
+
+/**
+ * "September 26, 2026" — the session's real date, in the person's own time zone
+ * when we know it. An unknown or invalid zone falls back to UTC rather than
+ * failing a write over a date format.
+ */
+export function formatEntryDate(date: Date, timeZone?: string): string {
+  const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" };
+  try {
+    return new Intl.DateTimeFormat("en-US", { ...options, timeZone }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat("en-US", { ...options, timeZone: "UTC" }).format(date);
+  }
+}
+
+/**
+ * Render an entry the way the skill specifies: the dated heading, the filled
+ * fields in order, the My Reflection placeholder, then the Echo Thread if there
+ * is one ("After the My Reflection placeholder").
+ */
+export function buildMapPage(entry: MapEntry, dateText: string): MapPage {
+  const heading = `${dateText} — ${entry.title}`;
+  const field = (key: EntryFieldKey): string | null => {
+    const label = ENTRY_FIELDS.find((f) => f.key === key)!.label;
+    return entry[key].length > 0 ? `**${label}:** ${entry[key]}` : null;
+  };
+
+  const body = ENTRY_FIELDS.filter((f) => f.key !== "thread")
+    .map((f) => field(f.key))
+    .filter((line): line is string => line !== null);
+  const thread = field("thread");
+
+  const markdown = [`### ${heading}`, ...body, MY_REFLECTION, ...(thread ? [thread] : [])].join(
+    "\n\n",
+  );
+
+  return { heading, markdown };
 }

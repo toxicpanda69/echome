@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appendMessages, resumeOrStartSession } from "@/lib/echo/sessions";
 import { InMemorySessionStore } from "@/lib/echo/store";
 import { commitClosing, proposeClosing, abandonClosing, RitualError } from "@/lib/echo/ritual";
-import { keepOnly, parseDistillation, type Distillation } from "@/lib/echo/schema";
+import { buildMapPage, keepOnly, parseDistillation, type Distillation } from "@/lib/echo/schema";
 import { FakeXTiles } from "@/lib/xtiles/fake";
 import { XTilesWriteError } from "@/lib/xtiles/adapter";
 
@@ -19,8 +19,16 @@ const USER = "22222222-2222-4222-8222-222222222222";
 const SECRET = "I have not told anyone that I already handed in my notice";
 
 const DISTILLED: Distillation = {
-  compass: [{ facet: "direction", label: "Already gone", note: "The decision is behind them." }],
-  map: [{ kind: "pattern", label: "Deciding in private", note: "Announces, never consults." }],
+  entry: {
+    title: "Already Gone",
+    theme: "The decision was made before you told anyone.",
+    moment: "",
+    leftOff: "Telling the people it affects.",
+    pattern: "",
+    sentence: "",
+    light: "Deciding was the hard part, and it is behind you.",
+    thread: "",
+  },
 };
 
 vi.mock("@/lib/echo/distill", () => ({
@@ -112,7 +120,7 @@ describe("when the xTiles write fails", () => {
     xtiles.failNextWrite = { reason: "upstream 503", retryable: true };
 
     await expect(
-      commitClosing(store, xtiles, USER, id, ["compass-0"], proposal.distillation),
+      commitClosing(store, xtiles, USER, id, ["entry-theme"], proposal.distillation),
     ).rejects.toThrow(RitualError);
 
     // Every byte is still here.
@@ -135,7 +143,7 @@ describe("when the xTiles write fails", () => {
       xtiles,
       USER,
       id,
-      ["compass-0"],
+      ["entry-theme"],
       proposal.distillation,
     ).catch((e: RitualError) => e);
 
@@ -151,16 +159,16 @@ describe("when the xTiles write fails", () => {
     const proposal = await proposeClosing(store, USER);
 
     xtiles.failNextWrite = { reason: "upstream 503", retryable: true };
-    await commitClosing(store, xtiles, USER, id, ["compass-0"], proposal.distillation).catch(
+    await commitClosing(store, xtiles, USER, id, ["entry-theme"], proposal.distillation).catch(
       () => {},
     );
 
     // The retry goes through.
-    await commitClosing(store, xtiles, USER, id, ["compass-0"], proposal.distillation);
+    await commitClosing(store, xtiles, USER, id, ["entry-theme"], proposal.distillation);
 
     expect(store.peek(id)).toBeUndefined();
     const workspace = await xtiles.readExisting(USER);
-    expect(workspace.compass).toHaveLength(1);
+    expect(workspace).toHaveLength(1);
   });
 
   it("does not destroy the session when xTiles is not connected", async () => {
@@ -172,7 +180,7 @@ describe("when the xTiles write fails", () => {
     const proposal = await proposeClosing(store, USER);
 
     await expect(
-      commitClosing(store, notConnected, USER, id, ["compass-0"], proposal.distillation),
+      commitClosing(store, notConnected, USER, id, ["entry-theme"], proposal.distillation),
     ).rejects.toThrow(/isn't connected/i);
 
     expect(store.peek(id)).toBeDefined();
@@ -180,40 +188,48 @@ describe("when the xTiles write fails", () => {
 });
 
 describe("idempotency", () => {
-  it("a repeated write under one key does not duplicate someone's Compass", async () => {
+  it("a repeated write under one key does not duplicate an entry on the Map", async () => {
     const xtiles = new FakeXTiles();
-    const first = await xtiles.write(USER, DISTILLED, "key-1");
-    const second = await xtiles.write(USER, DISTILLED, "key-1");
+    const page = buildMapPage(DISTILLED.entry!, "September 26, 2026");
+    const first = await xtiles.write(USER, page, "key-1");
+    const second = await xtiles.write(USER, page, "key-1");
 
     expect(second.ref).toBe(first.ref);
-    const workspace = await xtiles.readExisting(USER);
-    expect(workspace.compass).toHaveLength(1);
-    expect(workspace.map).toHaveLength(1);
+    expect(await xtiles.readExisting(USER)).toHaveLength(1);
   });
 });
 
 describe("the schema seam", () => {
-  it("keeps exactly the entries chosen, by stable id", () => {
-    const kept = keepOnly(DISTILLED, ["map-0"]);
-    expect(kept.compass).toHaveLength(0);
-    expect(kept.map).toHaveLength(1);
+  it("keeps exactly the fields chosen, by stable id", () => {
+    const kept = keepOnly(DISTILLED, ["entry-light"]);
+    expect(kept.entry?.light).toBe(DISTILLED.entry!.light);
+    expect(kept.entry?.theme).toBe("");
+    expect(kept.entry?.leftOff).toBe("");
+    // The title always comes with whatever is kept.
+    expect(kept.entry?.title).toBe("Already Gone");
+  });
+
+  it("keeping no fields means no entry at all", () => {
+    expect(keepOnly(DISTILLED, []).entry).toBeNull();
   });
 
   it("rejects a distillation with the wrong shape rather than storing it", () => {
-    expect(() => parseDistillation({ compass: [], map: [{ kind: "nope", label: "x", note: "" }] }))
-      .toThrow(/Map entry 0/);
-    expect(() => parseDistillation({ compass: [] })).toThrow(/no map array/);
     expect(() => parseDistillation("a paragraph of prose")).toThrow(/not an object/);
+    expect(() => parseDistillation({})).toThrow(/no entry/);
+    expect(() => parseDistillation({ entry: { title: "x" } })).toThrow(/theme is missing/);
   });
 
   it("never quotes the offending value in the error, since it came from a conversation", () => {
     const error = (() => {
       try {
-        parseDistillation({ compass: [{ facet: "value", label: "", note: "SECRET TEXT" }], map: [] });
+        parseDistillation({
+          entry: { ...DISTILLED.entry, title: "Fine", theme: "", light: "SECRET TEXT" },
+        });
       } catch (e) {
         return e as Error;
       }
     })();
+    expect(error).toBeInstanceOf(Error);
     expect(error?.message).not.toContain("SECRET TEXT");
   });
 });

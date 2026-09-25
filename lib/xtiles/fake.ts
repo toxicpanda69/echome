@@ -3,7 +3,7 @@ import "server-only";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { Distillation } from "@/lib/echo/schema";
+import type { MapPage } from "@/lib/echo/schema";
 import {
   XTilesWriteError,
   type WriteResult,
@@ -25,8 +25,8 @@ import {
 interface Workspace {
   workspaceId: string;
   displayName: string;
-  compass: Distillation["compass"];
-  map: Distillation["map"];
+  /** The EchoMap, oldest first. There is no Compass: only the person writes that. */
+  map: MapPage[];
   /** idempotencyKey -> ref, so a retry returns the original result. */
   writes: Record<string, { ref: string; writtenAt: string }>;
 }
@@ -62,15 +62,23 @@ export class FakeXTiles implements XTilesAdapter {
   }
 
   private workspaceFor(all: Record<string, Workspace>, userId: string): Workspace {
-    return (
-      all[userId] ?? {
+    const existing = all[userId];
+    if (!existing) {
+      return {
         workspaceId: `fake-ws-${userId.slice(0, 8)}`,
         displayName: "Local workspace",
-        compass: [],
         map: [],
         writes: {},
-      }
-    );
+      };
+    }
+    // A local file written by an older version of the app may hold entries in a
+    // shape that no longer exists. Keep only well-formed pages.
+    return {
+      ...existing,
+      map: (Array.isArray(existing.map) ? existing.map : []).filter(
+        (page): page is MapPage => typeof page?.markdown === "string",
+      ),
+    };
   }
 
   /** Everyone is connected in the fake — connection is tested separately. */
@@ -83,16 +91,11 @@ export class FakeXTiles implements XTilesAdapter {
     return { workspaceId: workspace.workspaceId, displayName: workspace.displayName };
   }
 
-  async readExisting(userId: string): Promise<Distillation> {
-    const workspace = this.workspaceFor(this.load(), userId);
-    return { compass: workspace.compass, map: workspace.map };
+  async readExisting(userId: string): Promise<readonly MapPage[]> {
+    return this.workspaceFor(this.load(), userId).map;
   }
 
-  async write(
-    userId: string,
-    distillation: Distillation,
-    idempotencyKey: string,
-  ): Promise<WriteResult> {
+  async write(userId: string, page: MapPage, idempotencyKey: string): Promise<WriteResult> {
     if (this.failNextWrite) {
       const { reason, retryable } = this.failNextWrite;
       this.failNextWrite = null;
@@ -102,7 +105,7 @@ export class FakeXTiles implements XTilesAdapter {
     const all = this.load();
     const workspace = this.workspaceFor(all, userId);
 
-    // A retry must not duplicate someone's Compass.
+    // A retry must not duplicate an entry on someone's Map.
     const existing = workspace.writes[idempotencyKey];
     if (existing) return existing;
 
@@ -113,8 +116,7 @@ export class FakeXTiles implements XTilesAdapter {
 
     all[userId] = {
       ...workspace,
-      compass: [...workspace.compass, ...distillation.compass],
-      map: [...workspace.map, ...distillation.map],
+      map: [...workspace.map, page],
       writes: { ...workspace.writes, [idempotencyKey]: result },
     };
     this.save(all);

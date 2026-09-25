@@ -48,11 +48,16 @@ const FORBIDDEN = [
 ];
 
 const DISTILLED: Distillation = {
-  compass: [
-    { facet: "tension", label: "Movement as avoidance", note: "Leaving arrives before deciding." },
-    { facet: "value", label: "Being known", note: "Wants to be seen without explaining." },
-  ],
-  map: [{ kind: "pattern", label: "The reasonable exit", note: "A good reason appears on time." }],
+  entry: {
+    title: "The Reasonable Exit",
+    theme: "Leaving arrives before deciding, and a good reason turns up right on time.",
+    moment: "",
+    leftOff: "Wanting to be seen without having to explain.",
+    pattern: "",
+    sentence: "",
+    light: "You do not have to explain yourself to be worth knowing.",
+    thread: "",
+  },
 };
 
 // The distiller and the receipt writer are stubbed so this test needs no API
@@ -161,7 +166,7 @@ describe("the erasure audit", () => {
         xtiles,
         USER,
         proposal.sessionId,
-        ["compass-0", "map-0"],
+        ["entry-theme", "entry-leftOff", "entry-light"],
         proposal.distillation,
       );
 
@@ -199,13 +204,15 @@ describe("the erasure audit", () => {
     });
 
     const proposal = await proposeClosing(store, USER);
-    // Three entries were drawn out; they keep one.
-    await commitClosing(store, xtiles, USER, proposal.sessionId, ["compass-0"], proposal.distillation);
+    // Three fields were drawn out; they keep one.
+    await commitClosing(store, xtiles, USER, proposal.sessionId, ["entry-theme"], proposal.distillation);
 
     const workspace = await xtiles.readExisting(USER);
-    expect(workspace.compass).toHaveLength(1);
-    expect(workspace.compass[0]!.label).toBe("Movement as avoidance");
-    expect(workspace.map).toHaveLength(0);
+    expect(workspace).toHaveLength(1);
+    expect(workspace[0]!.markdown).toContain("**Theme:** Leaving arrives before deciding");
+    // What they did not tick is not on the page.
+    expect(workspace[0]!.markdown).not.toContain("Wanting to be seen");
+    expect(workspace[0]!.markdown).not.toContain("A light to leave on");
   });
 
   it("destroys the conversation even when the person keeps nothing", async () => {
@@ -225,6 +232,6 @@ describe("the erasure audit", () => {
     expect(result.ref).toBeNull();
     expect(store.peek(proposal.sessionId)).toBeUndefined();
     // Nothing was written to the workspace either.
-    expect(await xtiles.readExisting(USER)).toEqual({ compass: [], map: [] });
+    expect(await xtiles.readExisting(USER)).toEqual([]);
   });
 });

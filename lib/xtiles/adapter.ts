@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Distillation } from "@/lib/echo/schema";
+import type { MapPage } from "@/lib/echo/schema";
 
 /**
  * The xTiles seam.
@@ -33,20 +33,18 @@ export interface XTilesAdapter {
 
   identity(userId: string): Promise<XTilesIdentity | null>;
 
-  /** Read back what is already in their workspace, for the ritual to show. */
-  readExisting(userId: string): Promise<Distillation>;
+  /** The EchoMap pages already in their workspace, oldest first. */
+  readExisting(userId: string): Promise<readonly MapPage[]>;
 
   /**
-   * Write kept entries into the user's own workspace.
+   * Add one dated entry to the person's EchoMap, as a page (never a task).
+   *
+   * The EchoCompass is theirs alone: nothing in this interface writes to it.
    *
    * MUST be idempotent on `idempotencyKey`. The closing ritual retries, and a
-   * retry that duplicates someone's Compass is a bug they will see forever.
+   * retry that duplicates an entry on someone's Map is a bug they will see forever.
    */
-  write(
-    userId: string,
-    distillation: Distillation,
-    idempotencyKey: string,
-  ): Promise<WriteResult>;
+  write(userId: string, page: MapPage, idempotencyKey: string): Promise<WriteResult>;
 }
 
 /** Raised when the write did not happen. The session must survive this. */
