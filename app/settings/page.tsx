@@ -29,8 +29,8 @@ export default async function SettingsPage() {
       <section className="flex flex-col gap-2 border-t border-line pt-6">
         <h2 className="text-sm font-medium">Appearance</h2>
         <p className="text-sm leading-relaxed text-ink-soft">
-          EchoMe follows your device&rsquo;s light or dark mode automatically. There&rsquo;s no
-          separate toggle for it here.
+          EchoMe follows your device&rsquo;s light or dark mode by default. To choose one yourself,
+          use the accessibility button on the left edge of any page.
         </p>
       </section>
 

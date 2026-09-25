@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 
+import { AccessibilityMenu } from "@/components/AccessibilityMenu";
 import { CustomCursor } from "@/components/CustomCursor";
 import { LocalModeBanner } from "@/components/local/LocalModeBanner";
 import { LOCAL_MODE } from "@/lib/local/mode";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 import "./globals.css";
 
@@ -22,8 +24,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the inline theme script sets data-theme on <html>
+    // before React hydrates.
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -33,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh antialiased">
         <CustomCursor />
+        <AccessibilityMenu />
         {LOCAL_MODE ? <LocalModeBanner /> : null}
         {children}
       </body>

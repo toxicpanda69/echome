@@ -168,7 +168,7 @@ export function PrimaryButton({
 export function FormMessage({ error, notice }: { error?: string; notice?: string }) {
   return (
     <p aria-live="polite" className="min-h-5 text-sm leading-relaxed">
-      {error ? <span className="text-red-700 dark:text-red-400">{error}</span> : null}
+      {error ? <span className="text-warn">{error}</span> : null}
       {notice ? <span className="text-ink-soft">{notice}</span> : null}
     </p>
   );
