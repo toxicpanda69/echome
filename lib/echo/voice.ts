@@ -14,7 +14,17 @@ import { classifyError, emptyMetrics, type TurnMetrics } from "@/lib/echo/teleme
  * request is shaped is here. Nothing about tone belongs in this file.
  */
 
-export const MODEL = "claude-opus-5";
+/**
+ * The conversation model. Opus by default; set ECHOME_CHAT_MODEL=claude-haiku-4-5
+ * (or claude-sonnet-5) to change it without a code change.
+ */
+export const MODEL = process.env.ECHOME_CHAT_MODEL || "claude-opus-5";
+
+/**
+ * Haiku 4.5 rejects adaptive thinking and the effort parameter with a 400, so
+ * both are left out for it. Opus and Sonnet 5 take them.
+ */
+const SUPPORTS_ADAPTIVE_THINKING = !MODEL.startsWith("claude-haiku");
 const MAX_TOKENS = 8000;
 const BETAS = ["server-side-fallback-2026-07-01"];
 
@@ -91,9 +101,10 @@ export async function* speak(
         messages,
         // Depth is controlled by effort, not budget_tokens (removed). Thinking is
         // never disabled on opus-5 — disabling it makes the model occasionally
-        // write tool-call syntax into visible text.
-        thinking: { type: "adaptive" },
-        output_config: { effort: "low" },
+        // write tool-call syntax into visible text. Haiku has neither option.
+        ...(SUPPORTS_ADAPTIVE_THINKING
+          ? { thinking: { type: "adaptive" as const }, output_config: { effort: "low" as const } }
+          : {}),
         // temperature / top_p / top_k are removed on this model. Sending any of
         // them is a 400.
         betas: BETAS,
