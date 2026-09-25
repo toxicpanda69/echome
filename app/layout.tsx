@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 
-import { AccessibilityMenu } from "@/components/AccessibilityMenu";
 import { CustomCursor } from "@/components/CustomCursor";
 import { LocalModeBanner } from "@/components/local/LocalModeBanner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { LOCAL_MODE } from "@/lib/local/mode";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh antialiased">
         <CustomCursor />
-        <AccessibilityMenu />
+        <ThemeToggle />
         {LOCAL_MODE ? <LocalModeBanner /> : null}
         {children}
       </body>

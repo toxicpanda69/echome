@@ -92,6 +92,30 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
+/* Theme toggle icon: sun by default, moon whenever dark is in effect (explicit
+   choice, or the device's setting when no choice is saved). */
+.theme-toggle__moon {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-toggle__sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-toggle__moon {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle__sun {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .theme-toggle__moon {
+    display: block;
+  }
+}
+
 body {
   background: var(--color-page);
   color: var(--color-ink);

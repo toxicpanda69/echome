@@ -30,7 +30,7 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-medium">Appearance</h2>
         <p className="text-sm leading-relaxed text-ink-soft">
           EchoMe follows your device&rsquo;s light or dark mode by default. To choose one yourself,
-          use the accessibility button on the left edge of any page.
+          use the sun/moon button at the top-left of any page.
         </p>
       </section>
 

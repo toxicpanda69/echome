@@ -1,7 +1,7 @@
 /** localStorage key for the visitor's theme choice. Absent means "follow the device". */
 export const THEME_STORAGE_KEY = "echome-theme";
 
-export type ThemeChoice = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
 /**
  * Runs synchronously in <head>, before first paint, so a saved choice never
